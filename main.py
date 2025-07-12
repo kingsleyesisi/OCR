@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-from flask import Flask, request, render_template, redirect, url_for, jsonify, flash
+from flask import Flask, request, render_template, redirect, url_for, jsonify, flash, send_from_directory
 import cv2
 import numpy as np
 
@@ -252,6 +252,11 @@ def index():
     """Main page route."""
     return render_template('index.html')
 
+@app.route('/static/uploads/<filename>')
+def uploaded_file(filename):
+    """Serve uploaded files."""
+    return send_from_directory(config.UPLOAD_FOLDER, filename)
+
 @app.route('/ocr', methods=['POST'])
 def ocr():
     """
@@ -284,29 +289,42 @@ def ocr():
         )
         
         if results['success']:
-            # Prepare template data
+            # Save the uploaded file for display
+            filename = safe_filename(file.filename)
+            file_path = os.path.join(config.UPLOAD_FOLDER, filename)
+            with open(file_path, 'wb') as f:
+                f.write(file_data)
+            
+            # Prepare template data with bounding boxes for text selection
             template_data = {
-                'filename': results['filename'],
-                'timestamp': results['timestamp'],
-                'extracted_text': results['final_results']['extracted_text'],
-                'confidence': results['final_results']['adjusted_confidence'],
-                'original_confidence': results['final_results']['original_confidence'],
-                'confidence_adjustment': results['final_results']['confidence_adjustment'],
-                'word_count': results['final_results']['word_count'],
-                'line_count': results['final_results']['line_count'],
-                'character_count': results['final_results']['character_count'],
-                'language': results['final_results']['language'],
-                'readability_score': results['final_results']['readability_score'],
-                'quality_assessment': results['final_results']['quality_assessment'],
-                'processing_summary': results['final_results']['processing_summary'],
-                'enhancement_level': enhancement_level,
-                'corrections_made': results['text_processing']['corrections_made'],
-                'validation_report': results['validation'],
-                'preprocessing_info': results['preprocessing']
+                'result': {
+                    'filename': filename,
+                    'timestamp': results['timestamp'],
+                    'final_results': {
+                        'extracted_text': results['final_results']['extracted_text'],
+                        'adjusted_confidence': results['final_results']['adjusted_confidence'],
+                        'original_confidence': results['final_results']['original_confidence'],
+                        'confidence_adjustment': results['final_results']['confidence_adjustment'],
+                        'word_count': results['final_results']['word_count'],
+                        'line_count': results['final_results']['line_count'],
+                        'character_count': results['final_results']['character_count'],
+                        'language': results['final_results']['language'],
+                        'readability_score': results['final_results']['readability_score'],
+                        'quality_assessment': results['final_results']['quality_assessment'],
+                        'processing_summary': results['final_results']['processing_summary']
+                    },
+                    'extraction': {
+                        'bounding_boxes': results['extraction'].get('bounding_boxes', [])
+                    },
+                    'enhancement_level': enhancement_level,
+                    'corrections_made': results['text_processing']['corrections_made'],
+                    'validation_report': results['validation'],
+                    'preprocessing_info': results['preprocessing']
+                }
             }
             
-            logger.info(f"OCR completed successfully: confidence={template_data['confidence']:.1f}%, "
-                       f"words={template_data['word_count']}")
+            logger.info(f"OCR completed successfully: confidence={template_data['result']['final_results']['adjusted_confidence']:.1f}%, "
+                       f"words={template_data['result']['final_results']['word_count']}")
             
             return render_template('result.html', **template_data)
         else:

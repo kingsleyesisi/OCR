@@ -454,8 +454,8 @@ class ImageValidator:
         if 'error' in quality_metrics:
             return False
         
-        overall_quality = quality_metrics.get('overall_quality', 'poor')
-        return overall_quality in ['excellent', 'good', 'fair']
+        overall_quality = quality_metrics.get('overall_quality', 30)
+        return overall_quality in [80, 60, 40]
 
 def validate_uploaded_file(file_data: bytes, filename: str) -> Dict[str, any]:
     """
