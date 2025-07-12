@@ -1,163 +1,795 @@
-
-<!-- templates/result.html -->
-{% extends "base.html" %}
-
-{% block title %}OCR Results - Enhanced OCR{% endblock %}
-
-{% block content %}
-<div class="header">
-    <h1><i class=" fas fa-file-text"></i> OCR Results</h1>
-    <p class="lead mb-0">Text extraction completed successfully</p>
-</div>
-
-<div class="container-fluid p-4">
-    <!-- Processing Summary -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-info-circle"></i> Processing Details</h5>
-                    <p><strong>File:</strong> {{ filename }}</p>
-                    <p><strong>Enhancement Level:</strong> {{ enhancement_level|title }}</p>
-                    <p><strong>Processing Time:</strong> {{ processing_time }}</p>
-                    <p><strong>Confidence Score:</strong> 
-                        <span class="badge confidence-{{ 'high' if confidence >= 80 else 'medium' if confidence >= 60 else 'low' }}">
-                            {{ confidence }}%
-                        </span>
-                    </p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-chart-bar"></i> Quality Assessment</h5>
-                    {% if confidence >= 80 %}
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle"></i> Excellent text extraction quality
-                        </div>
-                    {% elif confidence >= 60 %}
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> Good quality, some characters may need verification
-                        </div>
-                    {% else %}
-                        <div class="alert alert-danger">
-                            <i class="fas fa-times-circle"></i> Low confidence, please verify extracted text carefully
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Extracted Text -->
-    <div class="result-container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4><i class="fas fa-text-width"></i> Extracted Text</h4>
-            <div>
-                <button class="btn btn-outline-primary btn-sm" onclick="copyText()">
-                    <i class="fas fa-copy"></i> Copy Text
-                </button>
-                <button class="btn btn-outline-success btn-sm" onclick="downloadText()">
-                    <i class="fas fa-download"></i> Download
-                </button>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-body">
-                <textarea id="extractedText" class="form-control" rows="15" readonly>{{ extracted_text }}</textarea>
-                <div class="mt-3">
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle"></i> 
-                        Character count: <span id="charCount">{{ extracted_text|length }}</span> | 
-                        Word count: <span id="wordCount">{{ extracted_text.split()|length }}</span>
-                    </small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="text-center">
-        <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
-            <i class="fas fa-upload"></i> Process Another Image
-        </a>
-        <button class="btn btn-secondary btn-lg" onclick="window.print()">
-            <i class="fas fa-print"></i> Print Results
-        </button>
-    </div>
-</div>
-
-<div class="footer">
-    <p>&copy; {{ year }} Enhanced OCR Application. Processing completed with {{ confidence }}% confidence.</p>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    function copyText() {
-        const textArea = document.getElementById('extractedText');
-        textArea.select();
-        textArea.setSelectionRange(0, 99999); // For mobile devices
-        
-        try {
-            document.execCommand('copy');
-            showToast('Text copied to clipboard!', 'success');
-        } catch (err) {
-            showToast('Failed to copy text', 'error');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Results - Enhanced OCR System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --danger-color: #dc2626;
+            --light-bg: #f8fafc;
+            --dark-bg: #0f172a;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
         }
-    }
 
-    function downloadText() {
-        const text = document.getElementById('extractedText').value;
-        const blob = new Blob([text], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'extracted_text_{{ filename.split(".")[0] }}.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        showToast('Text file downloaded!', 'success');
-    }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
 
-    function showToast(message, type) {
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
-        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        toast.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check' : 'exclamation-triangle'}"></i>
-            ${message}
-        `;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.style.transition = 'opacity 0.5s';
-            toast.style.opacity = '0';
-            setTimeout(() => document.body.removeChild(toast), 500);
-        }, 3000);
-    }
+        .main-container {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            box-shadow: var(--shadow-xl);
+            backdrop-filter: blur(20px);
+            margin: 2rem auto;
+            max-width: 1400px;
+            overflow: hidden;
+        }
 
-    // Update character and word counts
-    function updateCounts() {
-        const text = document.getElementById('extractedText').value;
-        document.getElementById('charCount').textContent = text.length;
-        document.getElementById('wordCount').textContent = text.trim().split(/\s+/).length;
-    }
+        .header {
+            background: linear-gradient(135deg, var(--success-color) 0%, #047857 100%);
+            color: white;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            position: relative;
+        }
 
-    // Print styles
-    const printStyles = `
-        <style>
-            @media print {
-                .btn, .footer, .header { display: none !important; }
-                .main-container { box-shadow: none !important; margin: 0 !important; }
-                .result-container { border: 1px solid #000 !important; }
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .lead {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .content-section {
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.25rem;
+            color: white;
+        }
+
+        .stat-icon.confidence {
+            background: linear-gradient(135deg, var(--success-color), #047857);
+        }
+
+        .stat-icon.words {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        }
+
+        .stat-icon.lines {
+            background: linear-gradient(135deg, var(--warning-color), #b45309);
+        }
+
+        .stat-icon.quality {
+            background: linear-gradient(135deg, #7c3aed, #5b21b6);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark-bg);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .confidence-excellent {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success-color);
+        }
+
+        .confidence-good {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-color);
+        }
+
+        .confidence-fair {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--warning-color);
+        }
+
+        .confidence-poor {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--danger-color);
+        }
+
+        .result-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .result-header {
+            background: var(--light-bg);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .result-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-bg);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-outline-primary, .btn-outline-success, .btn-outline-info {
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border-width: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover, .btn-outline-success:hover, .btn-outline-info:hover {
+            transform: translateY(-1px);
+        }
+
+        .result-content {
+            padding: 2rem;
+        }
+
+        .text-output {
+            background: var(--light-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            min-height: 300px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .text-output:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .text-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .text-info {
+            display: flex;
+            gap: 2rem;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+
+        .processing-info {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .processing-header {
+            background: var(--light-bg);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .processing-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-bg);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .processing-content {
+            padding: 2rem;
+        }
+
+        .processing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .processing-item {
+            background: var(--light-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .processing-item h6 {
+            font-weight: 600;
+            color: var(--dark-bg);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .processing-item p {
+            color: var(--secondary-color);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .corrections-list {
+            background: var(--light-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .corrections-title {
+            font-weight: 600;
+            color: var(--dark-bg);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .correction-item {
+            background: white;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary, .btn-secondary {
+            border-radius: 12px;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        }
+
+        .btn-primary:hover, .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .footer {
+            background: var(--light-bg);
+            padding: 2rem;
+            text-align: center;
+            color: var(--secondary-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .toast {
+            border-radius: 12px;
+            border: none;
+            box-shadow: var(--shadow-lg);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
             }
-        </style>
-    `;
-    document.head.insertAdjacentHTML('beforeend', printStyles);
-</script>
-{% endblock %}
+            
+            .content-section {
+                padding: 1.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            
+            .result-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .result-actions {
+                justify-content: center;
+            }
+            
+            .text-info {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .main-container {
+                box-shadow: none;
+                margin: 0;
+            }
+            
+            .header {
+                background: var(--dark-bg) !important;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            .btn, .result-actions, .action-buttons, .footer {
+                display: none !important;
+            }
+            
+            .result-container {
+                box-shadow: none;
+                border: 2px solid var(--border-color) !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container fade-in">
+            <!-- Header -->
+            <div class="header">
+                <h1><i class="fas fa-check-circle me-3"></i>OCR Results</h1>
+                <p class="lead">Text extraction completed successfully with advanced processing</p>
+            </div>
+
+            <!-- Content -->
+            <div class="content-section">
+                <!-- Statistics Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon confidence">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-value">{{ "%.1f"|format(confidence) }}%</div>
+                        <div class="stat-label">Confidence Score</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon words">
+                            <i class="fas fa-font"></i>
+                        </div>
+                        <div class="stat-value">{{ word_count }}</div>
+                        <div class="stat-label">Words Extracted</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon lines">
+                            <i class="fas fa-align-left"></i>
+                        </div>
+                        <div class="stat-value">{{ line_count }}</div>
+                        <div class="stat-label">Lines of Text</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon quality">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="stat-value">{{ quality_assessment|title }}</div>
+                        <div class="stat-label">Quality Rating</div>
+                    </div>
+                </div>
+
+                <!-- Quality Assessment -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="result-container">
+                            <div class="result-header">
+                                <h5 class="result-title">
+                                    <i class="fas fa-chart-line"></i>
+                                    Quality Assessment
+                                </h5>
+                                <div>
+                                    {% set confidence_class = 'excellent' if confidence >= 85 else 'good' if confidence >= 70 else 'fair' if confidence >= 50 else 'poor' %}
+                                    <span class="confidence-badge confidence-{{ confidence_class }}">
+                                        <i class="fas fa-{{ 'check-circle' if confidence >= 70 else 'exclamation-triangle' if confidence >= 50 else 'times-circle' }}"></i>
+                                        {{ confidence_class|title }} Quality
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="result-content">
+                                {% if confidence >= 85 %}
+                                    <div class="alert alert-success mb-0">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        <strong>Excellent Results!</strong> The text extraction achieved very high confidence with minimal errors. The extracted text should be highly accurate and ready for use.
+                                    </div>
+                                {% elif confidence >= 70 %}
+                                    <div class="alert alert-info mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Good Results!</strong> The text extraction achieved good confidence. Most text should be accurate, but please review for any potential errors.
+                                    </div>
+                                {% elif confidence >= 50 %}
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Fair Results.</strong> The text extraction achieved moderate confidence. Please carefully review the extracted text for accuracy.
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-danger mb-0">
+                                        <i class="fas fa-times-circle me-2"></i>
+                                        <strong>Low Confidence.</strong> The text extraction had difficulty with this image. Please verify all extracted text carefully or try with a higher quality image.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Extracted Text -->
+                <div class="result-container">
+                    <div class="result-header">
+                        <h5 class="result-title">
+                            <i class="fas fa-file-text"></i>
+                            Extracted Text
+                        </h5>
+                        <div class="result-actions">
+                            <button class="btn btn-outline-primary btn-sm" onclick="copyText()">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" onclick="downloadText()">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="selectAll()">
+                                <i class="fas fa-mouse-pointer"></i> Select All
+                            </button>
+                        </div>
+                    </div>
+                    <div class="result-content">
+                        <textarea id="extractedText" class="text-output w-100" readonly>{{ extracted_text }}</textarea>
+                        <div class="text-stats">
+                            <div class="text-info">
+                                <span><i class="fas fa-info-circle me-1"></i> Characters: <strong id="charCount">{{ character_count }}</strong></span>
+                                <span><i class="fas fa-font me-1"></i> Words: <strong>{{ word_count }}</strong></span>
+                                <span><i class="fas fa-align-left me-1"></i> Lines: <strong>{{ line_count }}</strong></span>
+                                {% if language %}
+                                <span><i class="fas fa-language me-1"></i> Language: <strong>{{ language|upper }}</strong></span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Processing Information -->
+                <div class="processing-info">
+                    <div class="processing-header">
+                        <h5 class="processing-title">
+                            <i class="fas fa-cogs"></i>
+                            Processing Details
+                        </h5>
+                    </div>
+                    <div class="processing-content">
+                        <div class="processing-grid">
+                            <div class="processing-item">
+                                <h6><i class="fas fa-file-image"></i> File Information</h6>
+                                <p><strong>Filename:</strong> {{ filename }}</p>
+                                <p><strong>Processed:</strong> {{ timestamp }}</p>
+                                <p><strong>Enhancement:</strong> {{ enhancement_level|title }}</p>
+                            </div>
+                            
+                            <div class="processing-item">
+                                <h6><i class="fas fa-chart-bar"></i> Confidence Metrics</h6>
+                                <p><strong>Original:</strong> {{ "%.1f"|format(original_confidence) }}%</p>
+                                <p><strong>Adjusted:</strong> {{ "%.1f"|format(confidence) }}%</p>
+                                <p><strong>Adjustment:</strong> {{ "%+.1f"|format(confidence_adjustment) }}%</p>
+                            </div>
+                            
+                            <div class="processing-item">
+                                <h6><i class="fas fa-tasks"></i> Processing Steps</h6>
+                                <p><strong>Total Steps:</strong> {{ processing_summary.total_steps }}</p>
+                                <p><strong>Image Quality:</strong> {{ processing_summary.image_quality|title }}</p>
+                                <p><strong>Preprocessing:</strong> {{ processing_summary.preprocessing_steps }} operations</p>
+                            </div>
+                            
+                            {% if readability_score %}
+                            <div class="processing-item">
+                                <h6><i class="fas fa-book-open"></i> Text Analysis</h6>
+                                <p><strong>Readability:</strong> {{ "%.1f"|format(readability_score) }}/100</p>
+                                <p><strong>Corrections:</strong> {{ corrections_made|length }} applied</p>
+                                {% if language %}
+                                <p><strong>Language:</strong> {{ language|upper }}</p>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Corrections Made -->
+                        {% if corrections_made %}
+                        <div class="corrections-list">
+                            <h6 class="corrections-title">
+                                <i class="fas fa-magic"></i>
+                                Text Corrections Applied ({{ corrections_made|length }})
+                            </h6>
+                            {% for correction in corrections_made[:10] %}
+                            <div class="correction-item">
+                                {{ correction }}
+                            </div>
+                            {% endfor %}
+                            {% if corrections_made|length > 10 %}
+                            <div class="correction-item">
+                                <em>... and {{ corrections_made|length - 10 }} more corrections</em>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Process Another Image
+                    </a>
+                    <button class="btn btn-secondary" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>Print Results
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p>&copy; {{ year }} Enhanced OCR System. Processing completed with {{ "%.1f"|format(confidence) }}% confidence.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyText() {
+            const textArea = document.getElementById('extractedText');
+            textArea.select();
+            textArea.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                document.execCommand('copy');
+                showToast('Text copied to clipboard!', 'success');
+            } catch (err) {
+                // Fallback for modern browsers
+                navigator.clipboard.writeText(textArea.value).then(() => {
+                    showToast('Text copied to clipboard!', 'success');
+                }).catch(() => {
+                    showToast('Failed to copy text', 'error');
+                });
+            }
+        }
+
+        function selectAll() {
+            const textArea = document.getElementById('extractedText');
+            textArea.focus();
+            textArea.select();
+            showToast('Text selected', 'info');
+        }
+
+        function downloadText() {
+            const text = document.getElementById('extractedText').value;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'extracted_text_{{ filename.split(".")[0] if filename else "ocr_result" }}.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            showToast('Text file downloaded!', 'success');
+        }
+
+        function showToast(message, type) {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Date.now();
+            
+            const toastHtml = `
+                <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <i class="fas fa-${type === 'success' ? 'check-circle text-success' : type === 'error' ? 'exclamation-triangle text-danger' : 'info-circle text-info'} me-2"></i>
+                        <strong class="me-auto">${type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Info'}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: type === 'error' ? 5000 : 3000
+            });
+            
+            toast.show();
+            
+            // Remove toast element after it's hidden
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        }
+
+        // Update character count dynamically if text is edited
+        const textArea = document.getElementById('extractedText');
+        const charCount = document.getElementById('charCount');
+        
+        textArea.addEventListener('input', () => {
+            charCount.textContent = textArea.value.length;
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'a':
+                        if (document.activeElement === textArea) {
+                            // Let default behavior handle select all in textarea
+                            return;
+                        }
+                        e.preventDefault();
+                        selectAll();
+                        break;
+                    case 'c':
+                        if (document.activeElement === textArea && textArea.selectionStart !== textArea.selectionEnd) {
+                            // Let default behavior handle copy from textarea
+                            return;
+                        }
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        downloadText();
+                        break;
+                    case 'p':
+                        e.preventDefault();
+                        window.print();
+                        break;
+                }
+            }
+        });
+
+        // Add smooth scroll behavior
+        document.documentElement.style.scrollBehavior = 'smooth';
+
+        // Animate elements on load
+        window.addEventListener('load', () => {
+            const elements = document.querySelectorAll('.stat-card, .result-container, .processing-info');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(20px)';
+                    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                    
+                    setTimeout(() => {
+                        el.style.opacity = '1';
+                        el.style.transform = 'translateY(0)';
+                    }, 100);
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

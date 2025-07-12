@@ -1,482 +1,261 @@
+"""
+Main application module for the Enhanced OCR System.
+
+This module orchestrates the complete OCR workflow including image validation,
+preprocessing, text extraction, and post-processing with a modern web interface.
+"""
+
+import logging
+import os
+import traceback
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, Any, Optional
+
 from flask import Flask, request, render_template, redirect, url_for, jsonify, flash
-import pytesseract as tesseract
 import cv2
 import numpy as np
-import os
-import logging
-from datetime import datetime
-import traceback
-from PIL import Image, ImageEnhance
-import io
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('ocr_app.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Import our custom modules
+from config import get_config, Config
+from utils import setup_logging, Timer, ensure_directory, safe_filename, ResultExporter
+from image_validator import ImageValidator, validate_uploaded_file, ImageValidationError
+from image_preprocessor import ImagePreprocessor, preprocess_for_ocr, ImagePreprocessingError
+from text_extractor import TextExtractor, extract_text_from_image, TextExtractionError
+from text_processor import TextProcessor, process_ocr_text
 
 # Initialize Flask app
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Change this in production
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Configure Tesseract path
-tesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+# Load configuration
+config_class = get_config()
+app.config.from_object(config_class)
+config = config_class()
 
-# Supported image formats
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'webp'}
+# Set up logging
+setup_logging(config.LOG_LEVEL, config.LOG_FILE)
+logger = logging.getLogger(__name__)
 
+# Ensure required directories exist
+ensure_directory(config.UPLOAD_FOLDER)
+ensure_directory('outputs')
+ensure_directory('logs')
 
-class ImageQualityAnalyzer:
+class OCRWorkflow:
     """
-    Analyzes image quality to determine the best preprocessing strategy.
-    """
+    Main OCR workflow orchestrator.
     
-    @staticmethod
-    def calculate_image_quality_metrics(image):
-        """
-        Calculate various image quality metrics.
-        
-        Args:
-            image: OpenCV image array
-            
-        Returns:
-            Dictionary with quality metrics
-        """
-        if len(image.shape) == 3:
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        else:
-            gray = image
-        
-        # Calculate Laplacian variance (focus measure)
-        laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-        
-        # Calculate contrast using standard deviation
-        contrast = gray.std()
-        
-        # Calculate brightness (mean intensity)
-        brightness = gray.mean()
-        
-        # Calculate noise estimation using median filter
-        median_filtered = cv2.medianBlur(gray, 5)
-        noise_estimation = np.mean(np.abs(gray.astype(np.float32) - median_filtered.astype(np.float32)))
-        
-        # Calculate text-like edge density
-        edges = cv2.Canny(gray, 50, 150)
-        edge_density = np.sum(edges > 0) / (gray.shape[0] * gray.shape[1])
-        
-        return {
-            'sharpness': laplacian_var,
-            'contrast': contrast,
-            'brightness': brightness,
-            'noise': noise_estimation,
-            'edge_density': edge_density
-        }
-    
-    @staticmethod
-    def is_high_quality_image(metrics):
-        """
-        Determine if image is high quality based on metrics.
-        
-        Args:
-            metrics: Dictionary of quality metrics
-            
-        Returns:
-            Boolean indicating if image is high quality
-        """
-        # Define thresholds for high quality
-        high_quality_conditions = [
-            metrics['sharpness'] > 100,  # Good focus
-            metrics['contrast'] > 50,    # Good contrast
-            metrics['brightness'] > 50 and metrics['brightness'] < 200,  # Good brightness
-            metrics['noise'] < 10,       # Low noise
-            metrics['edge_density'] > 0.01  # Reasonable edge density
-        ]
-        
-        # Consider high quality if most conditions are met
-        return sum(high_quality_conditions) >= 3
-
-
-class ImagePreprocessor:
-    """
-    Advanced image preprocessing class with quality-aware processing.
+    This class coordinates all components of the OCR system to provide
+    a complete image-to-text conversion pipeline.
     """
     
-    @staticmethod
-    def is_allowed_file(filename):
-        """Check if the uploaded file has an allowed extension."""
-        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-    
-    @staticmethod
-    def resize_image(image, target_height=1000):
+    def __init__(self, config: Config):
         """
-        Resize image to optimal size for OCR while maintaining aspect ratio.
+        Initialize the OCR workflow.
         
         Args:
-            image: OpenCV image array
-            target_height: Target height in pixels
-            
-        Returns:
-            Resized image array
+            config: Configuration object
         """
-        height, width = image.shape[:2]
+        self.config = config
+        self.validator = ImageValidator(config)
+        self.preprocessor = ImagePreprocessor(config)
+        self.extractor = TextExtractor(config)
+        self.processor = TextProcessor()
         
-        # Only resize if image is significantly larger than target
-        if height > target_height * 1.5:
-            scale = target_height / height
-            new_width = int(width * scale)
-            new_height = target_height
-            image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
-            logger.info(f"Image resized from {width}x{height} to {new_width}x{new_height}")
-        
-        return image
-    
-    @staticmethod
-    def gentle_enhancement(image, metrics):
+    def process_image(self, image_data: bytes, filename: str, 
+                     enhancement_level: str = 'auto',
+                     apply_text_corrections: bool = True,
+                     format_type: str = 'standard') -> Dict[str, Any]:
         """
-        Apply gentle enhancement based on image quality metrics.
-        
-        Args:
-            image: Input image
-            metrics: Quality metrics dictionary
-            
-        Returns:
-            Enhanced image
-        """
-        enhanced = image.copy()
-        
-        # Only enhance if needed
-        if metrics['brightness'] < 100:
-            # Slight brightness increase
-            enhanced = cv2.convertScaleAbs(enhanced, alpha=1.0, beta=20)
-            logger.info("Applied brightness enhancement")
-        
-        if metrics['contrast'] < 40:
-            # Slight contrast increase
-            enhanced = cv2.convertScaleAbs(enhanced, alpha=1.1, beta=0)
-            logger.info("Applied contrast enhancement")
-        
-        return enhanced
-    
-    @staticmethod
-    def adaptive_preprocessing(image, metrics, is_high_quality):
-        """
-        Apply preprocessing based on image quality assessment.
-        
-        Args:
-            image: Input image
-            metrics: Quality metrics
-            is_high_quality: Boolean indicating image quality
-            
-        Returns:
-            Preprocessed image
-        """
-        if is_high_quality:
-            logger.info("High quality image detected - minimal preprocessing")
-            
-            # Convert to grayscale
-            if len(image.shape) == 3:
-                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            else:
-                gray = image
-            
-            # Only apply gentle enhancement if really needed
-            if metrics['brightness'] < 80 or metrics['contrast'] < 30:
-                gray = ImagePreprocessor.gentle_enhancement(gray, metrics)
-            
-            return gray
-        else:
-            logger.info("Lower quality image detected - applying comprehensive preprocessing")
-            
-            # Apply noise reduction for poor quality images
-            if metrics['noise'] > 8:
-                if len(image.shape) == 3:
-                    image = cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 21)
-                else:
-                    image = cv2.fastNlMeansDenoising(image, None, 10, 7, 21)
-            
-            # Convert to grayscale
-            if len(image.shape) == 3:
-                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            else:
-                gray = image
-            
-            # Apply stronger enhancements for poor quality
-            if metrics['brightness'] < 100 or metrics['contrast'] < 40:
-                gray = cv2.convertScaleAbs(gray, alpha=1.2, beta=10)
-            
-            # Apply sharpening if image is blurry
-            if metrics['sharpness'] < 50:
-                kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-                gray = cv2.filter2D(gray, -1, kernel)
-            
-            # Apply adaptive thresholding
-            binary = cv2.adaptiveThreshold(
-                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                cv2.THRESH_BINARY, 11, 2
-            )
-            
-            return binary
-    
-    @staticmethod
-    def correct_skew_improved(image):
-        """
-        Improved skew correction with better angle detection.
-        
-        Args:
-            image: Input image
-            
-        Returns:
-            Skew-corrected image
-        """
-        try:
-            if len(image.shape) == 3:
-                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            else:
-                gray = image.copy()
-            
-            # Use better edge detection parameters
-            edges = cv2.Canny(gray, 30, 100, apertureSize=3)
-            
-            # Detect lines
-            lines = cv2.HoughLines(edges, 1, np.pi/180, threshold=80)
-            
-            if lines is not None and len(lines) > 5:
-                angles = []
-                for line in lines:
-                    rho, theta = line[0]
-                    angle = np.degrees(theta) - 90
-                    # Filter out vertical lines
-                    if abs(angle) < 45:
-                        angles.append(angle)
-                
-                if angles:
-                    # Use mode instead of median for better skew detection
-                    angle_hist, bins = np.histogram(angles, bins=20, range=(-45, 45))
-                    mode_angle = bins[np.argmax(angle_hist)]
-                    
-                    # Only correct significant skew
-                    if abs(mode_angle) > 1.0:
-                        (h, w) = image.shape[:2]
-                        center = (w // 2, h // 2)
-                        rotation_matrix = cv2.getRotationMatrix2D(center, mode_angle, 1.0)
-                        corrected = cv2.warpAffine(image, rotation_matrix, (w, h), 
-                                                 flags=cv2.INTER_CUBIC, 
-                                                 borderMode=cv2.BORDER_REPLICATE)
-                        logger.info(f"Skew corrected by {mode_angle:.2f} degrees")
-                        return corrected
-            
-        except Exception as e:
-            logger.warning(f"Skew correction failed: {str(e)}")
-        
-        return image
-    
-    @classmethod
-    def preprocess_image(cls, image_data, enhancement_level='auto'):
-        """
-        Main preprocessing pipeline with quality-aware processing.
+        Complete OCR processing pipeline.
         
         Args:
             image_data: Raw image data
-            enhancement_level: Level of enhancement
+            filename: Original filename
+            enhancement_level: Image enhancement level
+            apply_text_corrections: Whether to apply text corrections
+            format_type: Text formatting type
             
         Returns:
-            Processed image ready for OCR
+            Complete processing results
         """
-        try:
-            # Convert bytes to numpy array
-            np_arr = np.frombuffer(image_data, np.uint8)
-            image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        with Timer("Complete OCR workflow"):
+            results = {
+                'filename': filename,
+                'timestamp': datetime.now().isoformat(),
+                'enhancement_level': enhancement_level,
+                'processing_steps': [],
+                'success': False
+            }
             
-            if image is None:
-                raise ValueError("Unable to decode image")
-            
-            logger.info(f"Original image shape: {image.shape}")
-            
-            # Step 1: Resize to optimal size
-            image = cls.resize_image(image)
-            
-            # Step 2: Analyze image quality
-            analyzer = ImageQualityAnalyzer()
-            metrics = analyzer.calculate_image_quality_metrics(image)
-            is_high_quality = analyzer.is_high_quality_image(metrics)
-            
-            logger.info(f"Image quality metrics: {metrics}")
-            logger.info(f"High quality image: {is_high_quality}")
-            
-            # Step 3: Apply skew correction if needed
-            if enhancement_level != 'light':
-                image = cls.correct_skew_improved(image)
-            
-            # Step 4: Apply quality-aware preprocessing
-            processed_image = cls.adaptive_preprocessing(image, metrics, is_high_quality)
-            
-            logger.info("Image preprocessing completed successfully")
-            return processed_image, metrics, is_high_quality
-            
-        except Exception as e:
-            logger.error(f"Image preprocessing failed: {str(e)}")
-            logger.error(traceback.format_exc())
-            raise
-
-
-class OCREngine:
-    """
-    Enhanced OCR engine with quality-aware configuration selection.
-    """
-    
-    @staticmethod
-    def get_optimal_config(is_high_quality, metrics):
-        """
-        Select optimal OCR configuration based on image quality.
-        
-        Args:
-            is_high_quality: Boolean indicating image quality
-            metrics: Quality metrics dictionary
-            
-        Returns:
-            List of OCR configurations to try
-        """
-        if is_high_quality:
-            # For high quality images, use configurations that preserve detail
-            configs = [
-                '--oem 3 --psm 6 -c preserve_interword_spaces=1',  # Default with word spacing
-                '--oem 3 --psm 4 -c preserve_interword_spaces=1',  # Single column
-                '--oem 3 --psm 3 -c preserve_interword_spaces=1',  # Fully automatic
-                '--oem 1 --psm 6',  # Neural network engine
-                '--oem 3 --psm 6',  # Standard config
-            ]
-        else:
-            # For lower quality images, use more aggressive segmentation
-            configs = [
-                '--oem 3 --psm 6',  # Standard
-                '--oem 3 --psm 8',  # Single word
-                '--oem 3 --psm 7',  # Single text line
-                '--oem 3 --psm 4',  # Single column
-                '--oem 3 --psm 3',  # Fully automatic
-            ]
-        
-        return configs
-    
-    @staticmethod
-    def extract_text_with_confidence(image, config):
-        """
-        Extract text with confidence scores and detailed analysis.
-        
-        Args:
-            image: Processed image
-            config: Tesseract configuration string
-            
-        Returns:
-            Tuple of (text, confidence, word_count, line_count)
-        """
-        try:
-            # Extract text
-            text = tesseract.image_to_string(image, config=config).strip()
-            
-            # Get detailed OCR data for confidence calculation
-            ocr_data = tesseract.image_to_data(image, config=config, output_type=tesseract.Output.DICT)
-            
-            # Calculate weighted confidence based on word lengths
-            confidences = []
-            word_lengths = []
-            
-            for i, conf in enumerate(ocr_data['conf']):
-                if int(conf) > 0 and ocr_data['text'][i].strip():
-                    word_length = len(ocr_data['text'][i].strip())
-                    confidences.append(int(conf))
-                    word_lengths.append(word_length)
-            
-            if confidences:
-                # Weight confidence by word length (longer words are more reliable)
-                weighted_conf = sum(c * w for c, w in zip(confidences, word_lengths))
-                total_weight = sum(word_lengths)
-                avg_confidence = weighted_conf / total_weight if total_weight > 0 else 0
-            else:
-                avg_confidence = 0
-            
-            # Count words and lines
-            word_count = len([word for word in text.split() if word.strip()])
-            line_count = len([line for line in text.split('\n') if line.strip()])
-            
-            return text, avg_confidence, word_count, line_count
-            
-        except Exception as e:
-            logger.error(f"OCR extraction failed: {str(e)}")
-            return "", 0, 0, 0
-    
-    @staticmethod
-    def multi_config_ocr(image, is_high_quality, metrics):
-        """
-        Try multiple OCR configurations and return the best result.
-        
-        Args:
-            image: Processed image
-            is_high_quality: Boolean indicating image quality
-            metrics: Quality metrics dictionary
-            
-        Returns:
-            Best OCR result
-        """
-        configs = OCREngine.get_optimal_config(is_high_quality, metrics)
-        
-        best_result = ("", 0, 0, 0)
-        results = []
-        
-        for i, config in enumerate(configs):
             try:
-                text, confidence, word_count, line_count = OCREngine.extract_text_with_confidence(image, config)
+                # Step 1: Image Validation
+                logger.info(f"Starting OCR workflow for: {filename}")
                 
-                # Calculate result score (combination of confidence and content)
-                content_score = min(word_count * 2, 100)  # Bonus for more words
-                total_score = (confidence * 0.7) + (content_score * 0.3)
+                with Timer("Image validation"):
+                    validation_report = validate_uploaded_file(image_data, filename)
+                    results['validation'] = validation_report
+                    results['processing_steps'].append('validation')
                 
-                results.append({
-                    'text': text,
-                    'confidence': confidence,
-                    'word_count': word_count,
-                    'line_count': line_count,
-                    'config': config,
-                    'score': total_score
-                })
+                if validation_report['validation_status'] != 'passed':
+                    raise ImageValidationError("Image validation failed")
                 
-                logger.info(f"Config {i+1}: conf={confidence:.1f}, words={word_count}, score={total_score:.1f}")
+                # Step 2: Image Preprocessing
+                with Timer("Image preprocessing"):
+                    quality_metrics = validation_report['quality_metrics']
+                    preprocessing_result = preprocess_for_ocr(
+                        image_data, quality_metrics, enhancement_level
+                    )
+                    results['preprocessing'] = {
+                        'steps_applied': preprocessing_result['processing_steps'],
+                        'enhancement_level': preprocessing_result['enhancement_level'],
+                        'is_binary': preprocessing_result['is_binary'],
+                        'original_shape': preprocessing_result['original_shape'],
+                        'final_shape': preprocessing_result['final_shape']
+                    }
+                    results['processing_steps'].append('preprocessing')
                 
-                if total_score > best_result[1]:
-                    best_result = (text, confidence, word_count, line_count)
-                    
+                # Step 3: Text Extraction
+                with Timer("Text extraction"):
+                    processed_image = preprocessing_result['processed_image']
+                    ocr_result = extract_text_from_image(
+                        processed_image, quality_metrics, enhancement_level
+                    )
+                    results['extraction'] = {
+                        'text': ocr_result.text,
+                        'confidence': ocr_result.confidence,
+                        'word_count': ocr_result.word_count,
+                        'line_count': ocr_result.line_count,
+                        'character_count': ocr_result.character_count,
+                        'processing_time': ocr_result.processing_time,
+                        'config_used': ocr_result.config_used
+                    }
+                    results['processing_steps'].append('extraction')
+                
+                # Step 4: Text Processing
+                with Timer("Text processing"):
+                    processed_text = process_ocr_text(
+                        ocr_result.text, apply_text_corrections, format_type
+                    )
+                    results['text_processing'] = {
+                        'original_text': processed_text.original_text,
+                        'cleaned_text': processed_text.cleaned_text,
+                        'formatted_text': processed_text.formatted_text,
+                        'corrections_made': processed_text.corrections_made,
+                        'confidence_adjustment': processed_text.confidence_adjustment,
+                        'word_count': processed_text.word_count,
+                        'line_count': processed_text.line_count,
+                        'character_count': processed_text.character_count,
+                        'language_detected': processed_text.language_detected,
+                        'readability_score': processed_text.readability_score
+                    }
+                    results['processing_steps'].append('text_processing')
+                
+                # Step 5: Final Results Compilation
+                final_confidence = max(0, min(100, 
+                    ocr_result.confidence + processed_text.confidence_adjustment
+                ))
+                
+                results['final_results'] = {
+                    'extracted_text': processed_text.formatted_text,
+                    'original_confidence': ocr_result.confidence,
+                    'adjusted_confidence': final_confidence,
+                    'confidence_adjustment': processed_text.confidence_adjustment,
+                    'word_count': processed_text.word_count,
+                    'line_count': processed_text.line_count,
+                    'character_count': processed_text.character_count,
+                    'language': processed_text.language_detected,
+                    'readability_score': processed_text.readability_score,
+                    'quality_assessment': self._assess_final_quality(results),
+                    'processing_summary': self._create_processing_summary(results)
+                }
+                
+                results['success'] = True
+                logger.info(f"OCR workflow completed successfully for {filename}")
+                
+                return results
+                
             except Exception as e:
-                logger.warning(f"Config {config} failed: {str(e)}")
-                continue
+                error_msg = str(e)
+                logger.error(f"OCR workflow failed for {filename}: {error_msg}")
+                logger.error(traceback.format_exc())
+                
+                results['error'] = error_msg
+                results['error_type'] = type(e).__name__
+                return results
+    
+    def _assess_final_quality(self, results: Dict[str, Any]) -> str:
+        """
+        Assess the overall quality of the OCR results.
         
-        # Log the best result
-        logger.info(f"Best result: confidence={best_result[1]:.1f}, words={best_result[2]}")
+        Args:
+            results: Complete processing results
+            
+        Returns:
+            Quality assessment string
+        """
+        try:
+            final_confidence = results['final_results']['adjusted_confidence']
+            word_count = results['final_results']['word_count']
+            corrections_count = len(results['text_processing']['corrections_made'])
+            
+            # Quality assessment logic
+            if final_confidence >= 85 and word_count > 5:
+                return 'excellent'
+            elif final_confidence >= 70 and word_count > 3:
+                return 'good'
+            elif final_confidence >= 50 and word_count > 1:
+                return 'fair'
+            else:
+                return 'poor'
+                
+        except Exception:
+            return 'unknown'
+    
+    def _create_processing_summary(self, results: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create a summary of the processing pipeline.
         
-        return best_result
+        Args:
+            results: Complete processing results
+            
+        Returns:
+            Processing summary dictionary
+        """
+        try:
+            return {
+                'total_steps': len(results['processing_steps']),
+                'steps_completed': results['processing_steps'],
+                'image_quality': results['validation']['quality_metrics']['overall_quality'],
+                'preprocessing_steps': len(results['preprocessing']['steps_applied']),
+                'text_corrections': len(results['text_processing']['corrections_made']),
+                'confidence_change': results['text_processing']['confidence_adjustment'],
+                'final_assessment': results['final_results']['quality_assessment']
+            }
+        except Exception:
+            return {'error': 'Could not create processing summary'}
 
+# Initialize workflow
+ocr_workflow = OCRWorkflow(config)
 
-# Flask routes
+# Flask Routes
 @app.context_processor
-def inject_year():
-    """Inject current year into templates."""
-    return {'year': datetime.now().year}
-
+def inject_globals():
+    """Inject global variables into templates."""
+    return {
+        'year': datetime.now().year,
+        'app_name': 'Enhanced OCR System'
+    }
 
 @app.route('/')
 def index():
     """Main page route."""
     return render_template('index.html')
 
-
 @app.route('/ocr', methods=['POST'])
 def ocr():
     """
-    Main OCR processing route with enhanced quality detection.
+    Main OCR processing route.
     """
     try:
         # Validate file upload
@@ -489,92 +268,144 @@ def ocr():
             flash('No file selected', 'error')
             return redirect(url_for('index'))
         
-        if not ImagePreprocessor.is_allowed_file(file.filename):
-            flash('Invalid file type. Please upload an image file.', 'error')
-            return redirect(url_for('index'))
-        
-        # Get enhancement level from form
+        # Get form parameters
         enhancement_level = request.form.get('enhancement_level', 'auto')
+        apply_corrections = request.form.get('apply_corrections', 'true').lower() == 'true'
+        format_type = request.form.get('format_type', 'standard')
         
-        logger.info(f"Processing file: {file.filename} with enhancement: {enhancement_level}")
+        logger.info(f"Processing OCR request: {file.filename}, enhancement: {enhancement_level}")
         
-        # Read and preprocess image
-        image_data = file.read()
-        processed_image, metrics, is_high_quality = ImagePreprocessor.preprocess_image(image_data, enhancement_level)
+        # Read file data
+        file_data = file.read()
         
-        # Extract text using quality-aware OCR
-        text, confidence, word_count, line_count = OCREngine.multi_config_ocr(processed_image, is_high_quality, metrics)
+        # Process image through OCR workflow
+        results = ocr_workflow.process_image(
+            file_data, file.filename, enhancement_level, apply_corrections, format_type
+        )
         
-        # Prepare result data
-        result_data = {
-            'extracted_text': text,
-            'confidence': round(confidence, 2),
-            'word_count': word_count,
-            'line_count': line_count,
-            'filename': file.filename,
-            'enhancement_level': enhancement_level,
-            'is_high_quality': is_high_quality,
-            'quality_metrics': {k: round(v, 2) for k, v in metrics.items()},
-            'processing_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }
-        
-        logger.info(f"OCR completed - Confidence: {confidence:.1f}%, Words: {word_count}, Quality: {'High' if is_high_quality else 'Low'}")
-        
-        return render_template('result.html', **result_data)
-        
+        if results['success']:
+            # Prepare template data
+            template_data = {
+                'filename': results['filename'],
+                'timestamp': results['timestamp'],
+                'extracted_text': results['final_results']['extracted_text'],
+                'confidence': results['final_results']['adjusted_confidence'],
+                'original_confidence': results['final_results']['original_confidence'],
+                'confidence_adjustment': results['final_results']['confidence_adjustment'],
+                'word_count': results['final_results']['word_count'],
+                'line_count': results['final_results']['line_count'],
+                'character_count': results['final_results']['character_count'],
+                'language': results['final_results']['language'],
+                'readability_score': results['final_results']['readability_score'],
+                'quality_assessment': results['final_results']['quality_assessment'],
+                'processing_summary': results['final_results']['processing_summary'],
+                'enhancement_level': enhancement_level,
+                'corrections_made': results['text_processing']['corrections_made'],
+                'validation_report': results['validation'],
+                'preprocessing_info': results['preprocessing']
+            }
+            
+            logger.info(f"OCR completed successfully: confidence={template_data['confidence']:.1f}%, "
+                       f"words={template_data['word_count']}")
+            
+            return render_template('result.html', **template_data)
+        else:
+            flash(f'OCR processing failed: {results.get("error", "Unknown error")}', 'error')
+            return redirect(url_for('index'))
+            
     except Exception as e:
-        logger.error(f"OCR processing error: {str(e)}")
+        logger.error(f"OCR route error: {str(e)}")
         logger.error(traceback.format_exc())
-        flash(f'Error processing image: {str(e)}', 'error')
+        flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('index'))
-
 
 @app.route('/api/ocr', methods=['POST'])
 def api_ocr():
     """
-    Enhanced API endpoint for OCR processing.
+    API endpoint for OCR processing.
     """
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'No file uploaded'}), 400
         
         file = request.files['file']
-        if not ImagePreprocessor.is_allowed_file(file.filename):
-            return jsonify({'error': 'Invalid file type'}), 400
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
         
+        # Get parameters
         enhancement_level = request.form.get('enhancement_level', 'auto')
+        apply_corrections = request.form.get('apply_corrections', 'true').lower() == 'true'
+        format_type = request.form.get('format_type', 'standard')
         
         # Process image
-        image_data = file.read()
-        processed_image, metrics, is_high_quality = ImagePreprocessor.preprocess_image(image_data, enhancement_level)
+        file_data = file.read()
+        results = ocr_workflow.process_image(
+            file_data, file.filename, enhancement_level, apply_corrections, format_type
+        )
         
-        # Extract text
-        text, confidence, word_count, line_count = OCREngine.multi_config_ocr(processed_image, is_high_quality, metrics)
-        
-        return jsonify({
-            'success': True,
-            'text': text,
-            'confidence': round(confidence, 2),
-            'word_count': word_count,
-            'line_count': line_count,
-            'filename': file.filename,
-            'enhancement_level': enhancement_level,
-            'is_high_quality': is_high_quality,
-            'quality_metrics': {k: round(v, 2) for k, v in metrics.items()},
-            'timestamp': datetime.now().isoformat()
-        })
-        
+        if results['success']:
+            return jsonify({
+                'success': True,
+                'filename': results['filename'],
+                'text': results['final_results']['extracted_text'],
+                'confidence': results['final_results']['adjusted_confidence'],
+                'original_confidence': results['final_results']['original_confidence'],
+                'word_count': results['final_results']['word_count'],
+                'line_count': results['final_results']['line_count'],
+                'character_count': results['final_results']['character_count'],
+                'language': results['final_results']['language'],
+                'quality_assessment': results['final_results']['quality_assessment'],
+                'processing_summary': results['final_results']['processing_summary'],
+                'timestamp': results['timestamp']
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': results.get('error', 'Unknown error'),
+                'error_type': results.get('error_type', 'UnknownError')
+            }), 500
+            
     except Exception as e:
         logger.error(f"API OCR error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/validate', methods=['POST'])
+def api_validate():
+    """
+    API endpoint for image validation only.
+    """
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file uploaded'}), 400
+        
+        file = request.files['file']
+        file_data = file.read()
+        
+        validation_report = validate_uploaded_file(file_data, file.filename)
+        
+        return jsonify({
+            'success': True,
+            'validation_report': validation_report
+        })
+        
+    except Exception as e:
+        logger.error(f"API validation error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/download/<format_type>')
+def download_result(format_type):
+    """
+    Download OCR results in specified format.
+    """
+    # This would be implemented to download results
+    # For now, return a simple response
+    return jsonify({'message': f'Download in {format_type} format not yet implemented'})
 
 @app.errorhandler(413)
 def too_large(e):
     """Handle file too large error."""
     flash('File is too large. Maximum size is 16MB.', 'error')
     return redirect(url_for('index'))
-
 
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -584,8 +415,15 @@ def handle_exception(e):
     flash('An unexpected error occurred. Please try again.', 'error')
     return redirect(url_for('index'))
 
-
 if __name__ == '__main__':
+    logger.info("Starting Enhanced OCR System")
+    logger.info(f"Configuration: {config.__class__.__name__}")
+    logger.info(f"Upload folder: {config.UPLOAD_FOLDER}")
+    logger.info(f"Max file size: {config.MAX_CONTENT_LENGTH / (1024*1024):.1f}MB")
+    
     # Run the application
-    logger.info("Starting Enhanced OCR Application with Quality Detection")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(
+        debug=config.DEBUG,
+        host='0.0.0.0',
+        port=5000
+    )
