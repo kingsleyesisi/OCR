@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}OCR Result - OCR App{% endblock %}
+
+{% block header %}OCR Result{% endblock %}
+
+{% block content %}
+  <h2>Extracted Text</h2>
+  <textarea readonly>{{ extracted_text }}</textarea>
+  <p>
+    <a href="{{ url_for('index') }}" class="btn">Try Another Image</a>
+  </p>
+{% endblock %}

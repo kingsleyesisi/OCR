@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Image - OCR App{% endblock %}
+
+{% block header %}Upload an Image for OCR{% endblock %}
+
+{% block content %}
+  <form action="{{ url_for('ocr') }}" method="post" enctype="multipart/form-data">
+    <label for="file">Select image file:</label>
+    <input type="file" name="file" id="file" accept="image/*" required>
+    <button class="btn" type="submit">Extract Text</button>
+  </form>
+{% endblock %}
