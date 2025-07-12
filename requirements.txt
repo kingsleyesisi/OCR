@@ -1,0 +1,5 @@
+flask
+pytesseract
+numpy
+uvicorn
+opencv-python==4.12.0.88

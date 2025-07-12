@@ -1,13 +1,163 @@
+
+<!-- templates/result.html -->
 {% extends "base.html" %}
 
-{% block title %}OCR Result - OCR App{% endblock %}
-
-{% block header %}OCR Result{% endblock %}
+{% block title %}OCR Results - Enhanced OCR{% endblock %}
 
 {% block content %}
-  <h2>Extracted Text</h2>
-  <textarea readonly>{{ extracted_text }}</textarea>
-  <p>
-    <a href="{{ url_for('index') }}" class="btn">Try Another Image</a>
-  </p>
+<div class="header">
+    <h1><i class=" fas fa-file-text"></i> OCR Results</h1>
+    <p class="lead mb-0">Text extraction completed successfully</p>
+</div>
+
+<div class="container-fluid p-4">
+    <!-- Processing Summary -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-info-circle"></i> Processing Details</h5>
+                    <p><strong>File:</strong> {{ filename }}</p>
+                    <p><strong>Enhancement Level:</strong> {{ enhancement_level|title }}</p>
+                    <p><strong>Processing Time:</strong> {{ processing_time }}</p>
+                    <p><strong>Confidence Score:</strong> 
+                        <span class="badge confidence-{{ 'high' if confidence >= 80 else 'medium' if confidence >= 60 else 'low' }}">
+                            {{ confidence }}%
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-chart-bar"></i> Quality Assessment</h5>
+                    {% if confidence >= 80 %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Excellent text extraction quality
+                        </div>
+                    {% elif confidence >= 60 %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Good quality, some characters may need verification
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle"></i> Low confidence, please verify extracted text carefully
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extracted Text -->
+    <div class="result-container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4><i class="fas fa-text-width"></i> Extracted Text</h4>
+            <div>
+                <button class="btn btn-outline-primary btn-sm" onclick="copyText()">
+                    <i class="fas fa-copy"></i> Copy Text
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="downloadText()">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <textarea id="extractedText" class="form-control" rows="15" readonly>{{ extracted_text }}</textarea>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        Character count: <span id="charCount">{{ extracted_text|length }}</span> | 
+                        Word count: <span id="wordCount">{{ extracted_text.split()|length }}</span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="text-center">
+        <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-upload"></i> Process Another Image
+        </a>
+        <button class="btn btn-secondary btn-lg" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Results
+        </button>
+    </div>
+</div>
+
+<div class="footer">
+    <p>&copy; {{ year }} Enhanced OCR Application. Processing completed with {{ confidence }}% confidence.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copyText() {
+        const textArea = document.getElementById('extractedText');
+        textArea.select();
+        textArea.setSelectionRange(0, 99999); // For mobile devices
+        
+        try {
+            document.execCommand('copy');
+            showToast('Text copied to clipboard!', 'success');
+        } catch (err) {
+            showToast('Failed to copy text', 'error');
+        }
+    }
+
+    function downloadText() {
+        const text = document.getElementById('extractedText').value;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'extracted_text_{{ filename.split(".")[0] }}.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        showToast('Text file downloaded!', 'success');
+    }
+
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check' : 'exclamation-triangle'}"></i>
+            ${message}
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.transition = 'opacity 0.5s';
+            toast.style.opacity = '0';
+            setTimeout(() => document.body.removeChild(toast), 500);
+        }, 3000);
+    }
+
+    // Update character and word counts
+    function updateCounts() {
+        const text = document.getElementById('extractedText').value;
+        document.getElementById('charCount').textContent = text.length;
+        document.getElementById('wordCount').textContent = text.trim().split(/\s+/).length;
+    }
+
+    // Print styles
+    const printStyles = `
+        <style>
+            @media print {
+                .btn, .footer, .header { display: none !important; }
+                .main-container { box-shadow: none !important; margin: 0 !important; }
+                .result-container { border: 1px solid #000 !important; }
+            }
+        </style>
+    `;
+    document.head.insertAdjacentHTML('beforeend', printStyles);
+</script>
 {% endblock %}

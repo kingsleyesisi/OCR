@@ -1,13 +1,193 @@
+
+<!-- templates/index.html -->
 {% extends "base.html" %}
 
-{% block title %}Upload Image - OCR App{% endblock %}
-
-{% block header %}Upload an Image for OCR{% endblock %}
+{% block title %}Enhanced OCR - Upload Image{% endblock %}
 
 {% block content %}
-  <form action="{{ url_for('ocr') }}" method="post" enctype="multipart/form-data">
-    <label for="file">Select image file:</label>
-    <input type="file" name="file" id="file" accept="image/*" required>
-    <button class="btn" type="submit">Extract Text</button>
-  </form>
+<div class="header">
+    <h1><i class="fas fa-eye"></i> Enhanced OCR Application</h1>
+    <p class="lead mb-0">Professional image-to-text conversion with advanced preprocessing</p>
+</div>
+
+<div class="container-fluid p-4">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check' }}"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Features Section -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="feature-card text-center">
+                <i class="fas fa-magic fa-3x text-primary mb-3"></i>
+                <h5>Advanced Enhancement</h5>
+                <p>Automatically enhances blur, noise, and poor lighting conditions</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card text-center">
+                <i class="fas fa-rotate fa-3x text-success mb-3"></i>
+                <h5>Skew Correction</h5>
+                <p>Detects and corrects tilted or rotated document images</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="feature-card text-center">
+                <i class="fas fa-chart-line fa-3x text-warning mb-3"></i>
+                <h5>Confidence Scoring</h5>
+                <p>Provides accuracy confidence scores for extracted text</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <form id="uploadForm" action="{{ url_for('ocr') }}" method="post" enctype="multipart/form-data">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt fa-4x text-primary mb-3"></i>
+                    <h4>Upload Your Image</h4>
+                    <p class="text-muted">Drag and drop an image file here or click to browse</p>
+                    <input type="file" name="file" id="fileInput" accept="image/*" required style="display: none;">
+                    <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click();">
+                        <i class="fas fa-folder-open"></i> Choose File
+                    </button>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            Supported formats: PNG, JPG, JPEG, GIF, BMP, TIFF, WebP (Max: 16MB)
+                        </small>
+                    </div>
+                </div>
+                <div id="filePreview" class="mt-3" style="display: none;">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">Selected File:</h6>
+                            <p class="card-text" id="fileName"></p>
+                            <img id="imagePreview" class="img-thumbnail" style="max-width: 300px; max-height: 200px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="enhancement-options">
+                    <h5><i class="fas fa-cogs"></i> Enhancement Options</h5>
+                    <div class="mb-3">
+                        <label for="enhancement_level" class="form-label">Processing Level:</label>
+                        <select class="form-select" name="enhancement_level" id="enhancement_level">
+                            <option value="auto" selected>Auto (Recommended)</option>
+                            <option value="light">Light Processing</option>
+                            <option value="medium">Medium Processing</option>
+                            <option value="heavy">Heavy Processing</option>
+                        </select>
+                        <div class="form-text">
+                            <strong>Auto:</strong> Automatically selects the best processing method<br>
+                            <strong>Light:</strong> Basic noise reduction and contrast enhancement<br>
+                            <strong>Medium:</strong> Includes sharpening and advanced filtering<br>
+                            <strong>Heavy:</strong> Full preprocessing pipeline for difficult images
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+                        <i class="fas fa-magic"></i> Extract Text
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Processing Spinner -->
+    <div class="processing-spinner" id="processingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Processing...</span>
+        </div>
+        <h4 class="mt-3">Processing your image...</h4>
+        <p class="text-muted">This may take a few moments depending on image complexity</p>
+    </div>
+</div>
+
+<div class="footer">
+    <p>&copy; {{ year }} Enhanced OCR Application. Built with Flask, OpenCV, and Tesseract.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const imagePreview = document.getElementById('imagePreview');
+    const uploadForm = document.getElementById('uploadForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const processingSpinner = document.getElementById('processingSpinner');
+
+    // Drag and drop functionality
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('drag-over');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect();
+        }
+    });
+
+    // File input change handler
+    fileInput.addEventListener('change', handleFileSelect);
+
+    function handleFileSelect() {
+        const file = fileInput.files[0];
+        if (file) {
+            fileName.textContent = file.name;
+            
+            // Create preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                filePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Form submission handler
+    uploadForm.addEventListener('submit', function(e) {
+        if (!fileInput.files[0]) {
+            e.preventDefault();
+            alert('Please select a file first.');
+            return;
+        }
+        
+        // Show processing spinner
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        processingSpinner.style.display = 'block';
+        
+        // Scroll to spinner
+        processingSpinner.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Click to upload
+    uploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+</script>
 {% endblock %}
