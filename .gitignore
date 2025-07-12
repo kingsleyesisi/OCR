@@ -1,0 +1,6 @@
+ocr_app.log
+__pycache__/
+*.pyc
+.venv11
+.log
+ocr_system.log

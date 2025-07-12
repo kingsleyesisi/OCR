@@ -80,7 +80,7 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     """Production-specific configuration."""
     DEBUG = False
-    SECRET_KEY = os.environ.get('SECRET_KEY')
+    SECRET_KEY = 'DFDFDFDDFDDFDDFDDFDDFDDFDDFDDFDDFD'  # Placeholder, should be set in .env or environment variable
     if not SECRET_KEY:
         raise ValueError("No SECRET_KEY set for production environment")
 

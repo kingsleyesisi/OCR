@@ -1,9 +1,9 @@
 flask==2.3.3
 pytesseract==0.3.10
-opencv-python==4.8.1.78
-numpy==1.24.3
-Pillow==10.0.1
+opencv-python
+numpy
+Pillow
 python-magic==0.4.27
-scikit-image==0.21.0
-scipy==1.11.3
+scikit-image
+scipy
 gunicorn==21.2.0

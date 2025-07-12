@@ -140,7 +140,7 @@ class TextProcessor:
             r'[|¦]': 'l',  # Vertical bars to l
             r'[°º]': 'o',  # Degree symbols to o
             r'["""]': '"',  # Smart quotes to regular quotes
-            r'[''']': "'",  # Smart apostrophes to regular apostrophes
+            r"[''']": "'",  # Smart apostrophes to regular apostrophes
             r'[–—]': '-',  # Em/en dashes to hyphens
             r'[…]': '...',  # Ellipsis to three dots
             r'[®©™]': '',   # Remove trademark symbols
