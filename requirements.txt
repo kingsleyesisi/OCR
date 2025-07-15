@@ -7,3 +7,4 @@ python-magic==0.4.27
 scikit-image
 scipy
 gunicorn==21.2.0
+python-dotenv

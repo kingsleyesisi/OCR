@@ -260,82 +260,53 @@ def uploaded_file(filename):
 @app.route('/ocr', methods=['POST'])
 def ocr():
     """
-    Main OCR processing route.
+    Main OCR processing route - returns JSON for AJAX requests.
     """
     try:
         # Validate file upload
-        if 'file' not in request.files:
-            flash('No file uploaded', 'error')
-            return redirect(url_for('index'))
+        if 'image' not in request.files:
+            return jsonify({'success': False, 'error': 'No image uploaded'})
         
-        file = request.files['file']
+        file = request.files['image']
         if file.filename == '':
-            flash('No file selected', 'error')
-            return redirect(url_for('index'))
+            return jsonify({'success': False, 'error': 'No image selected'})
+        
+        filename = file.filename or 'unknown_image'
         
         # Get form parameters
         enhancement_level = request.form.get('enhancement_level', 'auto')
-        apply_corrections = request.form.get('apply_corrections', 'true').lower() == 'true'
+        apply_corrections = request.form.get('apply_text_corrections', 'true').lower() == 'true'
         format_type = request.form.get('format_type', 'standard')
         
-        logger.info(f"Processing OCR request: {file.filename}, enhancement: {enhancement_level}")
+        logger.info(f"Processing OCR request: {filename}, enhancement: {enhancement_level}")
         
         # Read file data
         file_data = file.read()
         
         # Process image through OCR workflow
         results = ocr_workflow.process_image(
-            file_data, file.filename, enhancement_level, apply_corrections, format_type
+            file_data, filename, enhancement_level, apply_corrections, format_type
         )
         
         if results['success']:
             # Save the uploaded file for display
-            filename = safe_filename(file.filename)
-            file_path = os.path.join(config.UPLOAD_FOLDER, filename)
+            safe_name = safe_filename(filename)
+            file_path = os.path.join(config.UPLOAD_FOLDER, safe_name)
             with open(file_path, 'wb') as f:
                 f.write(file_data)
             
-            # Prepare template data with bounding boxes for text selection
-            template_data = {
-                'result': {
-                    'filename': filename,
-                    'timestamp': results['timestamp'],
-                    'final_results': {
-                        'extracted_text': results['final_results']['extracted_text'],
-                        'adjusted_confidence': results['final_results']['adjusted_confidence'],
-                        'original_confidence': results['final_results']['original_confidence'],
-                        'confidence_adjustment': results['final_results']['confidence_adjustment'],
-                        'word_count': results['final_results']['word_count'],
-                        'line_count': results['final_results']['line_count'],
-                        'character_count': results['final_results']['character_count'],
-                        'language': results['final_results']['language'],
-                        'readability_score': results['final_results']['readability_score'],
-                        'quality_assessment': results['final_results']['quality_assessment'],
-                        'processing_summary': results['final_results']['processing_summary']
-                    },
-                    'extraction': {
-                        'bounding_boxes': results['extraction'].get('bounding_boxes', [])
-                    },
-                    'enhancement_level': enhancement_level,
-                    'corrections_made': results['text_processing']['corrections_made'],
-                    'validation_report': results['validation'],
-                    'preprocessing_info': results['preprocessing']
-                }
-            }
+            logger.info(f"OCR completed successfully: confidence={results['final_results']['adjusted_confidence']:.1f}%, "
+                       f"words={results['final_results']['word_count']}")
             
-            logger.info(f"OCR completed successfully: confidence={template_data['result']['final_results']['adjusted_confidence']:.1f}%, "
-                       f"words={template_data['result']['final_results']['word_count']}")
-            
-            return render_template('result.html', **template_data)
+            # Return JSON response for AJAX
+            return jsonify(results)
         else:
-            flash(f'OCR processing failed: {results.get("error", "Unknown error")}', 'error')
-            return redirect(url_for('index'))
+            return jsonify({'success': False, 'error': results.get('error', 'Unknown error')})
             
     except Exception as e:
         logger.error(f"OCR route error: {str(e)}")
         logger.error(traceback.format_exc())
-        flash(f'An error occurred: {str(e)}', 'error')
-        return redirect(url_for('index'))
+        return jsonify({'success': False, 'error': f'An error occurred: {str(e)}'})
 
 @app.route('/api/ocr', methods=['POST'])
 def api_ocr():
@@ -350,6 +321,8 @@ def api_ocr():
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
         
+        filename = file.filename or 'unknown_image'
+        
         # Get parameters
         enhancement_level = request.form.get('enhancement_level', 'auto')
         apply_corrections = request.form.get('apply_corrections', 'true').lower() == 'true'
@@ -358,7 +331,7 @@ def api_ocr():
         # Process image
         file_data = file.read()
         results = ocr_workflow.process_image(
-            file_data, file.filename, enhancement_level, apply_corrections, format_type
+            file_data, filename, enhancement_level, apply_corrections, format_type
         )
         
         if results['success']:
@@ -397,9 +370,10 @@ def api_validate():
             return jsonify({'error': 'No file uploaded'}), 400
         
         file = request.files['file']
+        filename = file.filename or 'unknown_image'
         file_data = file.read()
         
-        validation_report = validate_uploaded_file(file_data, file.filename)
+        validation_report = validate_uploaded_file(file_data, filename)
         
         return jsonify({
             'success': True,

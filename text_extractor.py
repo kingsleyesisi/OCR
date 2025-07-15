@@ -1,7 +1,8 @@
 """
-Improved text extraction module for the OCR system.
+Enhanced text extraction module for the OCR system with Google Lens-like capabilities.
 
-This module provides optimized OCR with better accuracy and text selection capabilities.
+This module provides optimized OCR with better accuracy, multi-line text extraction,
+and intelligent text processing for various document types.
 """
 
 import logging
@@ -29,8 +30,10 @@ class OCRResult:
     character_count: int
     processing_time: float
     config_used: str
-    bounding_boxes: List[Dict[str, any]] = None
-    word_confidences: List[float] = None
+    bounding_boxes: Optional[List[Dict[str, any]]] = None
+    word_confidences: Optional[List[float]] = None
+    paragraphs: Optional[List[str]] = None
+    detected_language: Optional[str] = None
 
 class TextExtractionError(Exception):
     """Custom exception for text extraction errors."""
@@ -38,17 +41,17 @@ class TextExtractionError(Exception):
 
 class TextExtractor:
     """
-    Optimized text extractor with improved accuracy and text selection support.
+    Enhanced text extractor with Google Lens-like capabilities.
     """
     
-    def __init__(self, config: Config = None):
+    def __init__(self, config: Optional[Config] = None):
         """
         Initialize the text extractor.
         
         Args:
             config: Configuration object with OCR parameters
         """
-        self.config = config or Config()
+        self.config = config if config is not None else Config()
         self._setup_tesseract()
         
     def _setup_tesseract(self):
@@ -74,12 +77,14 @@ class TextExtractor:
         Returns:
             List of OCR configuration strings
         """
-        # Simplified, more effective configurations
+        # Enhanced configurations for better multi-line text extraction
         base_configs = [
-            '--oem 3 --psm 6 -c preserve_interword_spaces=1',  # Uniform block of text
-            '--oem 3 --psm 4 -c preserve_interword_spaces=1',  # Single column of text
-            '--oem 3 --psm 3 -c preserve_interword_spaces=1',  # Fully automatic
+            '--oem 3 --psm 6 -c preserve_interword_spaces=1 -c textord_old_baselines=0',  # Uniform block of text
+            '--oem 3 --psm 4 -c preserve_interword_spaces=1 -c textord_old_baselines=0',  # Single column of text
+            '--oem 3 --psm 3 -c preserve_interword_spaces=1 -c textord_old_baselines=0',  # Fully automatic
             '--oem 3 --psm 8 -c preserve_interword_spaces=1',  # Single word
+            '--oem 3 --psm 7 -c preserve_interword_spaces=1',  # Single text line
+            '--oem 3 --psm 13 -c preserve_interword_spaces=1',  # Raw line
         ]
         
         # Add language-specific configs if needed
@@ -88,6 +93,7 @@ class TextExtractor:
             base_configs.extend([
                 '--oem 1 --psm 6',  # Legacy engine
                 '--oem 3 --psm 7',  # Single text line
+                '--oem 3 --psm 8',  # Single word
             ])
         
         return base_configs
@@ -123,6 +129,12 @@ class TextExtractor:
             line_count = len([line for line in text.split('\n') if line.strip()])
             character_count = len(text)
             
+            # Extract paragraphs
+            paragraphs = self._extract_paragraphs(text)
+            
+            # Detect language
+            detected_language = self._detect_language(text)
+            
             processing_time = time.time() - start_time
             
             result = OCRResult(
@@ -134,15 +146,94 @@ class TextExtractor:
                 processing_time=processing_time,
                 config_used=config,
                 bounding_boxes=bounding_boxes,
-                word_confidences=confidence_info['word_confidences']
+                word_confidences=confidence_info['word_confidences'],
+                paragraphs=paragraphs,
+                detected_language=detected_language
             )
             
-            logger.debug(f"OCR completed with config '{config}': confidence={result.confidence:.1f}%, words={word_count}")
+            logger.debug(f"OCR completed with config '{config}': confidence={result.confidence:.1f}%, words={word_count}, lines={line_count}")
             return result
             
         except Exception as e:
             logger.warning(f"OCR failed with config '{config}': {str(e)}")
             raise TextExtractionError(f"OCR extraction failed: {str(e)}")
+    
+    def _extract_paragraphs(self, text: str) -> List[str]:
+        """
+        Extract paragraphs from OCR text.
+        
+        Args:
+            text: OCR extracted text
+            
+        Returns:
+            List of paragraphs
+        """
+        # Split by double newlines to get paragraphs
+        paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+        
+        # If no double newlines, try single newlines with some logic
+        if not paragraphs:
+            lines = [line.strip() for line in text.split('\n') if line.strip()]
+            current_paragraph = []
+            paragraphs = []
+            
+            for line in lines:
+                # If line is short and ends with punctuation, it might be a continuation
+                if len(line) < 50 and line.endswith(('.', '!', '?')):
+                    current_paragraph.append(line)
+                elif len(line) < 30 and not line.endswith(('.', '!', '?')):
+                    # Short line without punctuation, likely continuation
+                    current_paragraph.append(line)
+                else:
+                    if current_paragraph:
+                        current_paragraph.append(line)
+                        paragraphs.append(' '.join(current_paragraph))
+                        current_paragraph = []
+                    else:
+                        paragraphs.append(line)
+            
+            # Add any remaining paragraph
+            if current_paragraph:
+                paragraphs.append(' '.join(current_paragraph))
+        
+        return paragraphs
+    
+    def _detect_language(self, text: str) -> str:
+        """
+        Simple language detection based on character patterns.
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            Detected language code
+        """
+        if not text:
+            return 'unknown'
+        
+        # Simple heuristics for language detection
+        # Count non-ASCII characters
+        non_ascii_count = sum(1 for char in text if ord(char) > 127)
+        total_chars = len(text)
+        
+        if total_chars == 0:
+            return 'unknown'
+        
+        non_ascii_ratio = non_ascii_count / total_chars
+        
+        # Check for specific language patterns
+        if re.search(r'[а-яё]', text, re.IGNORECASE):
+            return 'rus'
+        elif re.search(r'[一-龯]', text):
+            return 'chi_sim'
+        elif re.search(r'[あ-ん]', text):
+            return 'jpn'
+        elif re.search(r'[가-힣]', text):
+            return 'kor'
+        elif non_ascii_ratio > 0.1:
+            return 'mixed'
+        else:
+            return 'eng'
     
     def _calculate_confidence_metrics(self, ocr_data: Dict[str, List]) -> Dict[str, any]:
         """
@@ -248,31 +339,66 @@ class TextExtractor:
             try:
                 fallback_result = self.extract_text_with_config(image, '--oem 3 --psm 6')
                 return fallback_result
-            except Exception:
+            except Exception as e:
+                logger.error(f"All OCR configurations failed: {str(e)}")
                 raise TextExtractionError("All OCR configurations failed")
         
-        # Select best result based on confidence and text quality
-        best_result = max(results, key=lambda r: self._calculate_result_score(r))
+        # Select the best result based on multiple criteria
+        best_result = self._select_best_result(results)
+        
+        logger.info(f"Selected best OCR result: confidence={best_result.confidence:.1f}%, "
+                   f"words={best_result.word_count}, lines={best_result.line_count}")
+        
         return best_result
+    
+    def _select_best_result(self, results: List[OCRResult]) -> OCRResult:
+        """
+        Select the best OCR result based on multiple criteria.
+        
+        Args:
+            results: List of OCR results
+            
+        Returns:
+            Best OCR result
+        """
+        if len(results) == 1:
+            return results[0]
+        
+        # Score each result
+        scored_results = []
+        for result in results:
+            score = self._calculate_result_score(result)
+            scored_results.append((score, result))
+        
+        # Sort by score (higher is better)
+        scored_results.sort(key=lambda x: x[0], reverse=True)
+        
+        return scored_results[0][1]
     
     def _calculate_result_score(self, result: OCRResult) -> float:
         """
-        Calculate a score for OCR result quality.
+        Calculate a score for an OCR result.
         
         Args:
-            result: OCR result object
+            result: OCR result to score
             
         Returns:
-            Quality score
+            Score (higher is better)
         """
         # Base score from confidence
         score = result.confidence
         
-        # Bonus for longer, more meaningful text
-        if result.word_count > 5:
+        # Bonus for more words (indicates more complete extraction)
+        if result.word_count > 0:
+            score += min(result.word_count * 0.5, 20)
+        
+        # Bonus for multiple lines (indicates better structure detection)
+        if result.line_count > 1:
+            score += min(result.line_count * 2, 15)
+        
+        # Bonus for paragraphs (indicates good text structure)
+        if result.paragraphs and len(result.paragraphs) > 1:
             score += 10
-        elif result.word_count > 2:
-            score += 5
         
         # Penalty for very short results
         if result.character_count < 10:
@@ -294,32 +420,60 @@ class TextExtractor:
         Returns:
             Quality score (0-1)
         """
-        if not text.strip():
+        if not text:
             return 0.0
         
         # Check for common OCR artifacts
-        artifacts = ['|', 'l', 'I', '1', '0', 'O']  # Common misrecognitions
-        artifact_count = sum(text.count(artifact) for artifact in artifacts)
+        artifacts = 0
+        total_chars = len(text)
         
-        # Check for reasonable word lengths
-        words = text.split()
-        if not words:
-            return 0.0
+        # Count suspicious characters
+        suspicious_chars = sum(1 for char in text if char in '|[]{}()<>')
+        artifacts += suspicious_chars / total_chars if total_chars > 0 else 0
         
-        avg_word_length = sum(len(word) for word in words) / len(words)
+        # Check for excessive whitespace
+        consecutive_spaces = len(re.findall(r' {2,}', text))
+        artifacts += consecutive_spaces / total_chars if total_chars > 0 else 0
         
-        # Quality score based on artifacts and word length
-        artifact_penalty = min(artifact_count / len(text), 0.5)
-        length_bonus = min(avg_word_length / 8, 0.3)  # Optimal word length around 8
+        # Check for mixed case issues
+        mixed_case_issues = len(re.findall(r'[a-z][A-Z]', text))
+        artifacts += mixed_case_issues / total_chars if total_chars > 0 else 0
         
-        quality = 1.0 - artifact_penalty + length_bonus
-        return max(0.0, min(1.0, quality))
+        # Calculate quality score
+        quality = max(0.0, 1.0 - artifacts)
+        
+        return quality
+    
+    def extract_text_with_language_detection(self, image: np.ndarray, quality_level: str) -> OCRResult:
+        """
+        Extract text with automatic language detection and optimization.
+        
+        Args:
+            image: Preprocessed image array
+            quality_level: Image quality level
+            
+        Returns:
+            Best OCR result with language detection
+        """
+        # First, try with default language
+        result = self.extract_text_multi_config(image, quality_level)
+        
+        # If we got some text, try to detect language and re-run if needed
+        if result.text.strip() and result.detected_language != 'eng':
+            logger.info(f"Detected language: {result.detected_language}")
+            
+            # For now, we'll use the best result from default language
+            # In a full implementation, you could re-run with specific language packs
+            return result
+        
+        return result
 
+# Convenience function
 def extract_text_from_image(image: np.ndarray,
                            quality_metrics: Dict[str, any],
                            enhancement_level: str = 'auto') -> OCRResult:
     """
-    Extract text from image with optimized processing.
+    Convenience function for extracting text from preprocessed images.
     
     Args:
         image: Preprocessed image array
@@ -329,34 +483,17 @@ def extract_text_from_image(image: np.ndarray,
     Returns:
         OCR result object
     """
-    with Timer("Text extraction"):
-        extractor = TextExtractor()
-        
-        # Determine quality level
-        overall_quality = quality_metrics.get('overall_quality', 50)
-        
-        # Convert string quality to numeric if needed
-        if isinstance(overall_quality, str):
-            quality_mapping = {
-                'excellent': 90,
-                'good': 70,
-                'fair': 50,
-                'poor': 30
-            }
-            overall_quality = quality_mapping.get(overall_quality, 50)
-        
-        # Map quality to levels
-        if overall_quality >= 80:
-            quality_level = 'excellent'
-        elif overall_quality >= 60:
-            quality_level = 'good'
-        elif overall_quality >= 40:
-            quality_level = 'fair'
-        else:
-            quality_level = 'poor'
-        
-        # Extract text with optimal configuration
-        result = extractor.extract_text_multi_config(image, quality_level)
-        
-        logger.info(f"Text extraction completed: {result.word_count} words, {result.confidence:.1f}% confidence")
-        return result
+    extractor = TextExtractor()
+    
+    # Determine quality level
+    overall_quality = quality_metrics.get('overall_quality', 50)
+    if overall_quality >= 80:
+        quality_level = 'excellent'
+    elif overall_quality >= 60:
+        quality_level = 'good'
+    elif overall_quality >= 40:
+        quality_level = 'fair'
+    else:
+        quality_level = 'poor'
+    
+    return extractor.extract_text_with_language_detection(image, quality_level)

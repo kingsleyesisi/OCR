@@ -283,7 +283,7 @@ class ImageValidator:
         
         return metrics
     
-    def _assess_overall_quality(self, metrics: Dict[str, float]) -> str:
+    def _assess_overall_quality(self, metrics: Dict[str, float]) -> float:
         """
         Assess overall image quality based on individual metrics.
         
@@ -291,7 +291,7 @@ class ImageValidator:
             metrics: Dictionary of quality metrics
             
         Returns:
-            Overall quality assessment string
+            Overall quality assessment score (0-100)
         """
         score = 0
         max_score = 7
@@ -329,13 +329,13 @@ class ImageValidator:
         quality_ratio = score / max_score
         
         if quality_ratio >= 0.8:
-            return 'excellent'
+            return 90  # excellent
         elif quality_ratio >= 0.6:
-            return 'good'
+            return 70  # good
         elif quality_ratio >= 0.4:
-            return 'fair'
+            return 50  # fair
         else:
-            return 'poor'
+            return 30  # poor
     
     def get_image_metadata(self, file_path: Union[str, Path]) -> Dict[str, any]:
         """

@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced OCR System - Professional Image to Text Conversion</title>
+    <title>Google Lens-like OCR System - Advanced Image to Text Conversion</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2563eb;
-            --primary-dark: #1d4ed8;
-            --secondary-color: #64748b;
-            --success-color: #059669;
-            --warning-color: #d97706;
-            --danger-color: #dc2626;
-            --light-bg: #f8fafc;
-            --dark-bg: #0f172a;
-            --border-color: #e2e8f0;
+            --primary-color: #4285f4;
+            --primary-dark: #3367d6;
+            --secondary-color: #5f6368;
+            --success-color: #34a853;
+            --warning-color: #fbbc04;
+            --danger-color: #ea4335;
+            --light-bg: #f8f9fa;
+            --dark-bg: #202124;
+            --border-color: #dadce0;
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
@@ -172,6 +172,7 @@
             background: white;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .upload-area::before {
@@ -188,12 +189,12 @@
 
         .upload-area:hover {
             border-color: var(--primary-color);
-            background: rgba(37, 99, 235, 0.02);
+            background: rgba(66, 133, 244, 0.02);
         }
 
         .upload-area.drag-over {
             border-color: var(--primary-color);
-            background: rgba(37, 99, 235, 0.05);
+            background: rgba(66, 133, 244, 0.05);
             transform: scale(1.02);
         }
 
@@ -248,7 +249,7 @@
             border-radius: 16px;
             padding: 2rem;
             box-shadow: var(--shadow-md);
-            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
         }
 
         .options-title {
@@ -256,9 +257,6 @@
             font-weight: 600;
             color: var(--dark-bg);
             margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         .form-label {
@@ -270,158 +268,201 @@
         .form-select, .form-control {
             border: 2px solid var(--border-color);
             border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
+            padding: 0.75rem;
             transition: all 0.3s ease;
         }
 
         .form-select:focus, .form-control:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
         }
 
-        .form-text {
-            font-size: 0.875rem;
-            color: var(--secondary-color);
-            margin-top: 0.5rem;
-            line-height: 1.5;
-        }
-
-        .file-preview {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .file-preview-title {
-            font-weight: 600;
-            color: var(--dark-bg);
-            margin-bottom: 1rem;
-        }
-
-        .file-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .file-icon {
-            width: 48px;
-            height: 48px;
-            background: var(--light-bg);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary-color);
-            font-size: 1.25rem;
-        }
-
-        .file-details h6 {
-            font-weight: 600;
-            color: var(--dark-bg);
-            margin-bottom: 0.25rem;
-        }
-
-        .file-details small {
-            color: var(--secondary-color);
-        }
-
-        .image-preview {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .processing-spinner {
-            display: none;
-            text-align: center;
-            padding: 3rem 2rem;
+        .camera-section {
             background: white;
             border-radius: 16px;
-            margin-top: 2rem;
+            padding: 2rem;
             box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+            text-align: center;
         }
 
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
-            color: var(--primary-color);
+        .camera-button {
+            background: linear-gradient(135deg, var(--success-color), #2d8a47);
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+            margin: 1rem;
         }
 
-        .processing-title {
+        .camera-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, #2d8a47, var(--success-color));
+        }
+
+        .camera-icon {
+            margin-right: 0.5rem;
+        }
+
+        .processing-indicator {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            display: none;
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            margin-top: 2rem;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .result-title {
             font-size: 1.5rem;
             font-weight: 600;
             color: var(--dark-bg);
-            margin: 1.5rem 0 0.75rem;
         }
 
-        .processing-subtitle {
-            color: var(--secondary-color);
-            font-size: 1rem;
+        .confidence-badge {
+            background: linear-gradient(135deg, var(--success-color), #2d8a47);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
         }
 
-        .alert {
-            border: none;
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 1.5rem;
-            font-weight: 500;
-        }
-
-        .alert-success {
-            background: rgba(5, 150, 105, 0.1);
-            color: var(--success-color);
-        }
-
-        .alert-danger {
-            background: rgba(220, 38, 38, 0.1);
-            color: var(--danger-color);
-        }
-
-        .footer {
+        .extracted-text {
             background: var(--light-bg);
-            padding: 2rem;
-            text-align: center;
-            color: var(--secondary-color);
-            border-top: 1px solid var(--border-color);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 1.5rem;
         }
 
-        .footer-content {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .tech-stack {
-            display: flex;
-            justify-content: center;
+        .text-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
-            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--light-bg);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            margin-top: 0.25rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
             flex-wrap: wrap;
         }
 
-        .tech-badge {
-            background: white;
-            color: var(--secondary-color);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.875rem;
+        .btn-secondary {
+            background: var(--secondary-color);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
             font-weight: 500;
-            box-shadow: var(--shadow-sm);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            background: #2d8a47;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 2px solid var(--danger-color);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--danger-color);
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .success-message {
+            background: #f0fdf4;
+            border: 2px solid var(--success-color);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--success-color);
+            margin: 1rem 0;
+            display: none;
         }
 
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2rem;
-            }
-            
-            .header .lead {
-                font-size: 1.1rem;
             }
             
             .content-section {
@@ -430,223 +471,150 @@
             
             .feature-grid {
                 grid-template-columns: 1fr;
-                gap: 1.5rem;
             }
             
-            .upload-area {
-                padding: 2rem 1rem;
-            }
-            
-            .upload-icon {
-                font-size: 3rem;
-            }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.6s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .slide-up {
-            animation: slideUp 0.6s ease-out;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            .action-buttons {
+                flex-direction: column;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="main-container fade-in">
-            <!-- Header -->
-            <div class="header">
-                <div class="header-content">
-                    <h1><i class="fas fa-eye me-3"></i>Enhanced OCR System</h1>
-                    <p class="lead">Professional image-to-text conversion with advanced AI preprocessing and quality optimization</p>
+    <div class="main-container">
+        <div class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-camera"></i> Smart OCR</h1>
+                <p class="lead">Google Lens-like image to text conversion with advanced preprocessing and multi-line support</p>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <h3 class="feature-title">Advanced Preprocessing</h3>
+                    <p class="feature-description">Intelligent image enhancement with perspective correction, noise reduction, and text-specific optimization.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-text-height"></i>
+                    </div>
+                    <h3 class="feature-title">Multi-Line Extraction</h3>
+                    <p class="feature-description">Extract complete documents with proper paragraph structure and formatting preservation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <h3 class="feature-title">Language Detection</h3>
+                    <p class="feature-description">Automatic language detection and optimization for better accuracy across multiple languages.</p>
                 </div>
             </div>
 
-            <!-- Content -->
-            <div class="content-section">
-                <!-- Flash Messages -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                                <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-                <!-- Features Section -->
-                <div class="feature-grid slide-up">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-magic"></i>
+            <form id="ocrForm" enctype="multipart/form-data">
+                <div class="upload-section">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h3 class="upload-title">Upload Image or Take Photo</h3>
+                            <p class="upload-subtitle">Drag and drop your image here, or click to browse</p>
+                            <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;">
+                            <div id="filePreview" class="mt-2"></div>
+                            <button type="button" class="btn btn-primary" onclick="document.getElementById('imageInput').click()">
+                                <i class="fas fa-folder-open"></i> Choose File
+                            </button>
                         </div>
-                        <h3 class="feature-title">Advanced Enhancement</h3>
-                        <p class="feature-description">Intelligent image preprocessing with noise reduction, contrast optimization, and quality-aware processing for superior text extraction accuracy.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-rotate"></i>
-                        </div>
-                        <h3 class="feature-title">Smart Correction</h3>
-                        <p class="feature-description">Automatic skew detection and correction, perspective adjustment, and geometric distortion removal for optimal OCR results.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <h3 class="feature-title">Quality Analytics</h3>
-                        <p class="feature-description">Comprehensive confidence scoring, text validation, and detailed quality metrics with processing recommendations.</p>
                     </div>
                 </div>
 
-                <!-- Upload Section -->
-                <form id="uploadForm" action="{{ url_for('ocr') }}" method="post" enctype="multipart/form-data">
+                <div class="camera-section">
+                    <h3>Or Use Your Camera</h3>
+                    <p>Take a photo directly for instant text extraction</p>
+                    <button type="button" class="camera-button" onclick="openCamera()">
+                        <i class="fas fa-camera camera-icon"></i>Open Camera
+                    </button>
+                </div>
+
+                <div class="options-panel">
+                    <h3 class="options-title">Processing Options</h3>
                     <div class="row">
-                        <div class="col-lg-8">
-                            <div class="upload-section">
-                                <div class="upload-area" id="uploadArea">
-                                    <div class="upload-content">
-                                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                                        <h3 class="upload-title">Upload Your Image</h3>
-                                        <p class="upload-subtitle">Drag and drop an image file here or click to browse</p>
-                                        <input type="file" name="file" id="fileInput" accept="image/*" required style="display: none;">
-                                        <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click();">
-                                            <i class="fas fa-folder-open me-2"></i>Choose File
-                                        </button>
-                                        <div class="mt-3">
-                                            <small class="text-muted">
-                                                <strong>Supported formats:</strong> PNG, JPG, JPEG, GIF, BMP, TIFF, WebP<br>
-                                                <strong>Maximum size:</strong> 16MB
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div id="filePreview" class="file-preview" style="display: none;">
-                                    <h6 class="file-preview-title">Selected File</h6>
-                                    <div class="file-info">
-                                        <div class="file-icon">
-                                            <i class="fas fa-image"></i>
-                                        </div>
-                                        <div class="file-details">
-                                            <h6 id="fileName"></h6>
-                                            <small id="fileSize"></small>
-                                        </div>
-                                    </div>
-                                    <img id="imagePreview" class="image-preview" style="display: none;">
-                                </div>
-                            </div>
+                        <div class="col-md-6">
+                            <label for="enhancementLevel" class="form-label">Enhancement Level</label>
+                            <select class="form-select" id="enhancementLevel" name="enhancement_level">
+                                <option value="auto">Auto (Recommended)</option>
+                                <option value="minimal">Minimal</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="aggressive">Aggressive</option>
+                            </select>
                         </div>
-                        
-                        <div class="col-lg-4">
-                            <div class="options-panel">
-                                <h5 class="options-title">
-                                    <i class="fas fa-cogs"></i>
-                                    Processing Options
-                                </h5>
-                                
-                                <div class="mb-3">
-                                    <label for="enhancement_level" class="form-label">Enhancement Level</label>
-                                    <select class="form-select" name="enhancement_level" id="enhancement_level">
-                                        <option value="auto" selected>Auto (Recommended)</option>
-                                        <option value="light">Light Processing</option>
-                                        <option value="medium">Medium Processing</option>
-                                        <option value="heavy">Heavy Processing</option>
-                                    </select>
-                                    <div class="form-text">
-                                        <strong>Auto:</strong> Intelligently selects optimal processing<br>
-                                        <strong>Light:</strong> Basic enhancement and noise reduction<br>
-                                        <strong>Medium:</strong> Advanced filtering and correction<br>
-                                        <strong>Heavy:</strong> Maximum preprocessing for difficult images
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="format_type" class="form-label">Text Formatting</label>
-                                    <select class="form-select" name="format_type" id="format_type">
-                                        <option value="standard" selected>Standard</option>
-                                        <option value="preserve_structure">Preserve Structure</option>
-                                        <option value="clean">Clean & Minimal</option>
-                                    </select>
-                                    <div class="form-text">
-                                        Choose how the extracted text should be formatted and cleaned.
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="apply_corrections" id="apply_corrections" checked>
-                                        <label class="form-check-label" for="apply_corrections">
-                                            Apply Text Corrections
-                                        </label>
-                                    </div>
-                                    <div class="form-text">
-                                        Automatically correct common OCR errors and improve text quality.
-                                    </div>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary w-100" id="submitBtn">
-                                    <i class="fas fa-magic me-2"></i>Extract Text
-                                </button>
-                            </div>
+                        <div class="col-md-6">
+                            <label for="textCorrections" class="form-label">Text Corrections</label>
+                            <select class="form-select" id="textCorrections" name="apply_text_corrections">
+                                <option value="true">Enable</option>
+                                <option value="false">Disable</option>
+                            </select>
                         </div>
-                    </div>
-                </form>
-
-                <!-- Processing Spinner -->
-                <div class="processing-spinner" id="processingSpinner">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Processing...</span>
-                    </div>
-                    <h4 class="processing-title">Processing Your Image</h4>
-                    <p class="processing-subtitle">Our advanced AI is analyzing and extracting text from your image. This may take a few moments depending on image complexity and quality.</p>
-                    <div class="mt-3">
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Processing includes validation, enhancement, OCR, and text optimization
-                        </small>
                     </div>
                 </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-magic"></i> Extract Text
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-lg ms-2" onclick="testFileInput()">
+                        <i class="fas fa-bug"></i> Test File Input
+                    </button>
+                </div>
+            </form>
+
+            <div class="processing-indicator" id="processingIndicator">
+                <div class="spinner"></div>
+                <h4>Processing your image...</h4>
+                <p>This may take a few seconds for complex images</p>
             </div>
 
-            <!-- Footer -->
-            <div class="footer">
-                <div class="footer-content">
-                    <p>&copy; {{ year }} Enhanced OCR System. Built with advanced computer vision and machine learning.</p>
-                    <div class="tech-stack">
-                        <span class="tech-badge">Flask</span>
-                        <span class="tech-badge">OpenCV</span>
-                        <span class="tech-badge">Tesseract</span>
-                        <span class="tech-badge">Python</span>
-                        <span class="tech-badge">Bootstrap</span>
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <div class="result-section" id="resultSection">
+                <div class="result-header">
+                    <h3 class="result-title">Extracted Text</h3>
+                    <span class="confidence-badge" id="confidenceBadge">95% Confidence</span>
+                </div>
+
+                <div class="text-stats">
+                    <div class="stat-card">
+                        <span class="stat-number" id="wordCount">0</span>
+                        <div class="stat-label">Words</div>
                     </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="lineCount">0</span>
+                        <div class="stat-label">Lines</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="charCount">0</span>
+                        <div class="stat-label">Characters</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="paraCount">0</span>
+                        <div class="stat-label">Paragraphs</div>
+                    </div>
+                </div>
+
+                <div class="extracted-text" id="extractedText" contenteditable="true"></div>
+
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="copyText()">
+                        <i class="fas fa-copy"></i> Copy Text
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="downloadText()">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="clearResults()">
+                        <i class="fas fa-redo"></i> Process Another
+                    </button>
                 </div>
             </div>
         </div>
@@ -654,16 +622,15 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // DOM elements
+        // File upload handling
         const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
+        const imageInput = document.getElementById('imageInput');
+        const form = document.getElementById('ocrForm');
+        const processingIndicator = document.getElementById('processingIndicator');
+        const resultSection = document.getElementById('resultSection');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
         const filePreview = document.getElementById('filePreview');
-        const fileName = document.getElementById('fileName');
-        const fileSize = document.getElementById('fileSize');
-        const imagePreview = document.getElementById('imagePreview');
-        const uploadForm = document.getElementById('uploadForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const processingSpinner = document.getElementById('processingSpinner');
 
         // Drag and drop functionality
         uploadArea.addEventListener('dragover', (e) => {
@@ -671,138 +638,208 @@
             uploadArea.classList.add('drag-over');
         });
 
-        uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
+        uploadArea.addEventListener('dragleave', () => {
             uploadArea.classList.remove('drag-over');
         });
 
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('drag-over');
-            
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                fileInput.files = files;
-                handleFileSelect();
+                imageInput.files = files;
+                handleFileSelect(files[0]);
             }
         });
 
-        // File input change handler
-        fileInput.addEventListener('change', handleFileSelect);
+        uploadArea.addEventListener('click', () => {
+            imageInput.click();
+        });
 
-        // Click to upload
-        uploadArea.addEventListener('click', (e) => {
-            if (e.target === uploadArea || e.target.closest('.upload-content')) {
-                fileInput.click();
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
             }
         });
 
-        function handleFileSelect() {
-            const file = fileInput.files[0];
-            if (file) {
-                // Display file info
-                fileName.textContent = file.name;
-                fileSize.textContent = formatFileSize(file.size);
-                
-                // Show preview
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        imagePreview.src = e.target.result;
-                        imagePreview.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    imagePreview.style.display = 'none';
-                }
-                
-                filePreview.style.display = 'block';
-                filePreview.classList.add('fade-in');
+        function handleFileSelect(file) {
+            if (file.type.startsWith('image/')) {
+                filePreview.innerHTML = `<span style="color: var(--success-color);"><i class="fas fa-check-circle"></i> ${file.name} (Ready to process)</span>`;
+            } else {
+                showError('Please select a valid image file');
+                filePreview.innerHTML = '';
             }
         }
 
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        // Form submission handler
-        uploadForm.addEventListener('submit', function(e) {
-            if (!fileInput.files[0]) {
-                e.preventDefault();
-                showAlert('Please select a file first.', 'danger');
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const file = imageInput.files[0];
+            
+            console.log('Form submitted');
+            console.log('File input files:', imageInput.files);
+            console.log('Selected file:', file);
+            
+            if (!file) {
+                showError('Please select an image file');
                 return;
             }
-            
-            // Show processing state
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-            processingSpinner.style.display = 'block';
-            processingSpinner.classList.add('slide-up');
-            
-            // Scroll to spinner
-            processingSpinner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            console.log('File details:', {
+                name: file.name,
+                type: file.type,
+                size: file.size
+            });
+
+            // Show processing indicator
+            processingIndicator.style.display = 'block';
+            resultSection.style.display = 'none';
+            hideMessages();
+
+            try {
+                console.log('Sending request to /ocr');
+                
+                // Debug FormData contents
+                console.log('FormData contents:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(`${key}:`, value);
+                }
+                
+                const response = await fetch('/ocr', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Response status:', response.status);
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (result.success) {
+                    showResults(result);
+                } else {
+                    showError(result.error || 'Failed to process image');
+                }
+            } catch (error) {
+                console.error('Error during form submission:', error);
+                showError('Network error: ' + error.message);
+            } finally {
+                processingIndicator.style.display = 'none';
+            }
         });
 
-        function showAlert(message, type) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : 'check-circle'} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
+        function showResults(result) {
+            const finalResults = result.final_results;
             
-            const container = document.querySelector('.content-section');
-            container.insertBefore(alertDiv, container.firstChild);
+            // Update statistics
+            document.getElementById('wordCount').textContent = finalResults.word_count;
+            document.getElementById('lineCount').textContent = finalResults.line_count;
+            document.getElementById('charCount').textContent = finalResults.character_count;
+            document.getElementById('paraCount').textContent = finalResults.paragraphs ? finalResults.paragraphs.length : 0;
             
-            // Auto-hide success alerts
-            if (type === 'success') {
-                setTimeout(() => {
-                    alertDiv.style.transition = 'opacity 0.5s';
-                    alertDiv.style.opacity = '0';
-                    setTimeout(() => alertDiv.remove(), 500);
-                }, 5000);
+            // Update confidence badge
+            const confidence = Math.round(finalResults.adjusted_confidence);
+            const confidenceBadge = document.getElementById('confidenceBadge');
+            confidenceBadge.textContent = `${confidence}% Confidence`;
+            
+            if (confidence >= 90) {
+                confidenceBadge.style.background = 'linear-gradient(135deg, var(--success-color), #2d8a47)';
+            } else if (confidence >= 70) {
+                confidenceBadge.style.background = 'linear-gradient(135deg, var(--warning-color), #d97706)';
+            } else {
+                confidenceBadge.style.background = 'linear-gradient(135deg, var(--danger-color), #dc2626)';
             }
+            
+            // Update extracted text
+            document.getElementById('extractedText').textContent = finalResults.extracted_text;
+            
+            // Show results
+            resultSection.style.display = 'block';
+            showSuccess('Text extracted successfully!');
         }
 
-        // Auto-hide flash messages
-        setTimeout(() => {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                if (alert.classList.contains('alert-success')) {
-                    alert.style.transition = 'opacity 0.5s';
-                    alert.style.opacity = '0';
-                    setTimeout(() => alert.remove(), 500);
-                }
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+        }
+
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        function copyText() {
+            const text = document.getElementById('extractedText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showSuccess('Text copied to clipboard!');
+            }).catch(() => {
+                showError('Failed to copy text');
             });
-        }, 5000);
+        }
 
-        // Add smooth animations on scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
+        function downloadText() {
+            const text = document.getElementById('extractedText').textContent;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'extracted_text.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showSuccess('Text downloaded successfully!');
+        }
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
+        function clearResults() {
+            resultSection.style.display = 'none';
+            form.reset();
+            // Restore the original upload area content
+            const uploadContent = uploadArea.querySelector('.upload-content');
+            uploadContent.innerHTML = `
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <h3 class="upload-title">Upload Image or Take Photo</h3>
+                <p class="upload-subtitle">Drag and drop your image here, or click to browse</p>
+                <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;">
+                <div id="filePreview" class="mt-2"></div>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('imageInput').click()">
+                    <i class="fas fa-folder-open"></i> Choose File
+                </button>
+            `;
+            filePreview.innerHTML = '';
+            hideMessages();
+        }
 
-        // Observe feature cards for animation
-        document.querySelectorAll('.feature-card').forEach(card => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            observer.observe(card);
-        });
+        function openCamera() {
+            // This would integrate with device camera
+            alert('Camera functionality would be implemented here for mobile devices');
+        }
+
+        function testFileInput() {
+            console.log('Testing file input functionality...');
+            console.log('File input element:', imageInput);
+            console.log('File input files:', imageInput.files);
+            console.log('File input value:', imageInput.value);
+
+            if (imageInput.files.length > 0) {
+                console.log('File input is not empty. Files:', imageInput.files);
+                const file = imageInput.files[0];
+                console.log('Selected file:', file);
+                console.log('File name:', file.name);
+                console.log('File type:', file.type);
+                console.log('File size:', file.size);
+                alert('File input is not empty. You can proceed with file upload.');
+            } else {
+                console.log('File input is empty. No file selected.');
+                alert('File input is empty. Please select a file to upload.');
+            }
+        }
     </script>
 </body>
 </html>
