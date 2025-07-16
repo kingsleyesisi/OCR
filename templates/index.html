@@ -3,25 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced OCR System - Professional Image to Text Conversion</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Enhanced OCR System - AI-Powered Text Extraction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2563eb;
-            --primary-dark: #1d4ed8;
-            --secondary-color: #64748b;
-            --success-color: #059669;
-            --warning-color: #d97706;
-            --danger-color: #dc2626;
-            --light-bg: #f8fafc;
-            --dark-bg: #0f172a;
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --dark-gradient: linear-gradient(135deg, #434343 0%, #000000 100%);
+            
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #f093fb;
+            --success-color: #4facfe;
+            --warning-color: #43e97b;
+            --danger-color: #f5576c;
+            
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --text-muted: #a0aec0;
+            
+            --bg-primary: #ffffff;
+            --bg-secondary: #f7fafc;
+            --bg-tertiary: #edf2f7;
+            
             --border-color: #e2e8f0;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+            --border-radius: 20px;
+            --border-radius-sm: 12px;
+            --border-radius-lg: 28px;
+            
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 8px 25px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 40px rgba(0,0,0,0.15);
+            --shadow-xl: 0 25px 50px rgba(0,0,0,0.2);
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -32,25 +52,62 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             min-height: 100vh;
             line-height: 1.6;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            animation: backgroundShift 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
         }
 
         .main-container {
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 24px;
-            box-shadow: var(--shadow-xl);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-xl);
             margin: 2rem auto;
             max-width: 1400px;
             overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Header Styles */
         .header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            background: var(--primary-gradient);
             color: white;
-            padding: 3rem 2rem;
+            padding: 4rem 2rem;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -63,7 +120,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
             opacity: 0.3;
         }
 
@@ -73,40 +130,61 @@
         }
 
         .header h1 {
-            font-size: 3rem;
-            font-weight: 700;
+            font-size: 3.5rem;
+            font-weight: 800;
             margin-bottom: 1rem;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            background: linear-gradient(45deg, #ffffff, #f0f8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .header .lead {
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             font-weight: 400;
             opacity: 0.95;
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        .header-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Content Section */
         .content-section {
             padding: 3rem 2rem;
+            background: var(--bg-primary);
         }
 
+        /* Feature Cards */
         .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
             margin-bottom: 3rem;
         }
 
         .feature-card {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
+            background: var(--bg-primary);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
             box-shadow: var(--shadow-md);
             border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
+            transition: var(--transition);
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .feature-card::before {
@@ -116,13 +194,13 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            background: var(--primary-gradient);
             transform: scaleX(0);
-            transition: transform 0.3s ease;
+            transition: var(--transition);
         }
 
         .feature-card:hover {
-            transform: translateY(-4px);
+            transform: translateY(-8px);
             box-shadow: var(--shadow-lg);
         }
 
@@ -131,47 +209,56 @@
         }
 
         .feature-icon {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            border-radius: 16px;
+            width: 80px;
+            height: 80px;
+            background: var(--primary-gradient);
+            border-radius: var(--border-radius);
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 1.5rem;
             color: white;
-            font-size: 1.5rem;
+            font-size: 2rem;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(5deg);
         }
 
         .feature-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--dark-bg);
-            margin-bottom: 0.75rem;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
         }
 
         .feature-description {
-            color: var(--secondary-color);
-            font-size: 0.95rem;
-            line-height: 1.6;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.7;
         }
 
+        /* Upload Section */
         .upload-section {
-            background: var(--light-bg);
-            border-radius: 20px;
-            padding: 2rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
             margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
         }
 
         .upload-area {
             border: 3px dashed var(--border-color);
-            border-radius: 16px;
-            padding: 3rem 2rem;
+            border-radius: var(--border-radius);
+            padding: 4rem 2rem;
             text-align: center;
-            transition: all 0.3s ease;
-            background: white;
+            transition: var(--transition);
+            background: var(--bg-primary);
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .upload-area::before {
@@ -181,20 +268,25 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            background: var(--success-gradient);
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: var(--transition);
         }
 
         .upload-area:hover {
             border-color: var(--primary-color);
-            background: rgba(37, 99, 235, 0.02);
+            background: rgba(102, 126, 234, 0.02);
+            transform: scale(1.02);
         }
 
         .upload-area.drag-over {
-            border-color: var(--primary-color);
-            background: rgba(37, 99, 235, 0.05);
-            transform: scale(1.02);
+            border-color: var(--success-color);
+            background: rgba(79, 172, 254, 0.05);
+            transform: scale(1.05);
+        }
+
+        .upload-area.drag-over::before {
+            opacity: 0.1;
         }
 
         .upload-content {
@@ -203,197 +295,271 @@
         }
 
         .upload-icon {
-            font-size: 4rem;
+            font-size: 5rem;
             color: var(--primary-color);
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
             display: block;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         .upload-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--dark-bg);
-            margin-bottom: 0.75rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
         }
 
         .upload-subtitle {
-            color: var(--secondary-color);
-            margin-bottom: 2rem;
-            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            font-size: 1.1rem;
         }
 
+        /* Buttons */
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            background: var(--primary-gradient);
             border: none;
-            border-radius: 12px;
-            padding: 0.875rem 2rem;
+            border-radius: var(--border-radius-sm);
+            padding: 1rem 2.5rem;
             font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
+            font-size: 1.1rem;
+            transition: var(--transition);
             box-shadow: var(--shadow-md);
-            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .options-panel {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--border-color);
-        }
-
-        .options-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--dark-bg);
-            margin-bottom: 1.5rem;
-            display: flex;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
         }
 
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        /* Options Panel */
+        .options-panel {
+            background: var(--bg-primary);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            position: sticky;
+            top: 2rem;
+        }
+
+        .options-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
         .form-label {
-            font-weight: 500;
-            color: var(--dark-bg);
-            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
         }
 
         .form-select, .form-control {
             border: 2px solid var(--border-color);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
+            border-radius: var(--border-radius-sm);
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--bg-primary);
         }
 
         .form-select:focus, .form-control:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            outline: none;
         }
 
         .form-text {
-            font-size: 0.875rem;
-            color: var(--secondary-color);
-            margin-top: 0.5rem;
-            line-height: 1.5;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.75rem;
+            line-height: 1.6;
         }
 
+        .form-check {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-check-input {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-top: 0.125rem;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .form-check-label {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-left: 0.5rem;
+        }
+
+        /* File Preview */
         .file-preview {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-sm);
+            padding: 2rem;
+            margin-top: 2rem;
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow-sm);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .file-preview-title {
-            font-weight: 600;
-            color: var(--dark-bg);
-            margin-bottom: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
         }
 
         .file-info {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         .file-icon {
-            width: 48px;
-            height: 48px;
-            background: var(--light-bg);
-            border-radius: 8px;
+            width: 60px;
+            height: 60px;
+            background: var(--success-gradient);
+            border-radius: var(--border-radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--primary-color);
-            font-size: 1.25rem;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: var(--shadow-sm);
         }
 
         .file-details h6 {
             font-weight: 600;
-            color: var(--dark-bg);
-            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
         }
 
         .file-details small {
-            color: var(--secondary-color);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
 
         .image-preview {
             max-width: 100%;
-            max-height: 200px;
-            border-radius: 8px;
+            max-height: 250px;
+            border-radius: var(--border-radius-sm);
             box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
         }
 
+        /* Processing Spinner */
         .processing-spinner {
             display: none;
             text-align: center;
-            padding: 3rem 2rem;
-            background: white;
-            border-radius: 16px;
+            padding: 4rem 2rem;
+            background: var(--bg-primary);
+            border-radius: var(--border-radius);
             margin-top: 2rem;
             box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
         }
 
         .spinner-border {
-            width: 3rem;
-            height: 3rem;
+            width: 4rem;
+            height: 4rem;
             color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .processing-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--dark-bg);
-            margin: 1.5rem 0 0.75rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 2rem 0 1rem;
         }
 
         .processing-subtitle {
-            color: var(--secondary-color);
-            font-size: 1rem;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
+        /* Alerts */
         .alert {
             border: none;
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 1.5rem;
+            border-radius: var(--border-radius-sm);
+            padding: 1.25rem 1.75rem;
+            margin-bottom: 2rem;
             font-weight: 500;
+            border-left: 4px solid;
         }
 
         .alert-success {
-            background: rgba(5, 150, 105, 0.1);
+            background: rgba(79, 172, 254, 0.1);
             color: var(--success-color);
+            border-left-color: var(--success-color);
         }
 
         .alert-danger {
-            background: rgba(220, 38, 38, 0.1);
+            background: rgba(245, 87, 108, 0.1);
             color: var(--danger-color);
+            border-left-color: var(--danger-color);
         }
 
+        /* Footer */
         .footer {
-            background: var(--light-bg);
-            padding: 2rem;
+            background: var(--bg-secondary);
+            padding: 3rem 2rem;
             text-align: center;
-            color: var(--secondary-color);
+            color: var(--text-secondary);
             border-top: 1px solid var(--border-color);
         }
 
         .footer-content {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
@@ -401,23 +567,33 @@
             display: flex;
             justify-content: center;
             gap: 1rem;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             flex-wrap: wrap;
         }
 
         .tech-badge {
-            background: white;
-            color: var(--secondary-color);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            font-weight: 500;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
             box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
         }
 
+        .tech-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
             .header h1 {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
             
             .header .lead {
@@ -434,22 +610,27 @@
             }
             
             .upload-area {
-                padding: 2rem 1rem;
+                padding: 3rem 1rem;
             }
             
             .upload-icon {
-                font-size: 3rem;
+                font-size: 4rem;
+            }
+            
+            .options-panel {
+                position: static;
             }
         }
 
+        /* Utility Classes */
         .fade-in {
-            animation: fadeIn 0.6s ease-out;
+            animation: fadeIn 0.8s ease-out;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -461,26 +642,36 @@
             animation: slideUp 0.6s ease-out;
         }
 
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-gradient);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-gradient);
         }
     </style>
 </head>
 <body>
     <div class="container-fluid">
-        <div class="main-container fade-in">
+        <div class="main-container">
             <!-- Header -->
             <div class="header">
                 <div class="header-content">
-                    <h1><i class="fas fa-eye me-3"></i>Enhanced OCR System</h1>
-                    <p class="lead">Professional image-to-text conversion with advanced AI preprocessing and quality optimization</p>
+                    <div class="header-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h1>Enhanced OCR System</h1>
+                    <p class="lead">AI-powered image-to-text conversion with advanced preprocessing and intelligent quality optimization</p>
                 </div>
             </div>
 
@@ -500,21 +691,21 @@
                 {% endwith %}
 
                 <!-- Features Section -->
-                <div class="feature-grid slide-up">
+                <div class="feature-grid fade-in">
                     <div class="feature-card">
                         <div class="feature-icon">
                             <i class="fas fa-magic"></i>
                         </div>
-                        <h3 class="feature-title">Advanced Enhancement</h3>
-                        <p class="feature-description">Intelligent image preprocessing with noise reduction, contrast optimization, and quality-aware processing for superior text extraction accuracy.</p>
+                        <h3 class="feature-title">AI-Powered Enhancement</h3>
+                        <p class="feature-description">Advanced machine learning algorithms automatically optimize image quality with noise reduction, contrast enhancement, and intelligent preprocessing for maximum OCR accuracy.</p>
                     </div>
                     
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="fas fa-rotate"></i>
+                            <i class="fas fa-cogs"></i>
                         </div>
-                        <h3 class="feature-title">Smart Correction</h3>
-                        <p class="feature-description">Automatic skew detection and correction, perspective adjustment, and geometric distortion removal for optimal OCR results.</p>
+                        <h3 class="feature-title">Smart Processing</h3>
+                        <p class="feature-description">Multi-engine OCR with quality-aware configuration selection, automatic skew correction, and adaptive thresholding for optimal text extraction from any image type.</p>
                     </div>
                     
                     <div class="feature-card">
@@ -522,7 +713,7 @@
                             <i class="fas fa-chart-line"></i>
                         </div>
                         <h3 class="feature-title">Quality Analytics</h3>
-                        <p class="feature-description">Comprehensive confidence scoring, text validation, and detailed quality metrics with processing recommendations.</p>
+                        <p class="feature-description">Comprehensive confidence scoring, text validation, and detailed quality metrics with real-time processing insights and performance analytics.</p>
                     </div>
                 </div>
 
@@ -535,22 +726,24 @@
                                     <div class="upload-content">
                                         <i class="fas fa-cloud-upload-alt upload-icon"></i>
                                         <h3 class="upload-title">Upload Your Image</h3>
-                                        <p class="upload-subtitle">Drag and drop an image file here or click to browse</p>
+                                        <p class="upload-subtitle">Drag and drop an image file here or click to browse your files</p>
                                         <input type="file" name="file" id="fileInput" accept="image/*" required style="display: none;">
                                         <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click();">
-                                            <i class="fas fa-folder-open me-2"></i>Choose File
+                                            <i class="fas fa-folder-open"></i>Choose File
                                         </button>
-                                        <div class="mt-3">
+                                        <div class="mt-4">
                                             <small class="text-muted">
                                                 <strong>Supported formats:</strong> PNG, JPG, JPEG, GIF, BMP, TIFF, WebP<br>
-                                                <strong>Maximum size:</strong> 16MB
+                                                <strong>Maximum size:</strong> 16MB | <strong>Recommended:</strong> High-resolution scanned documents
                                             </small>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div id="filePreview" class="file-preview" style="display: none;">
-                                    <h6 class="file-preview-title">Selected File</h6>
+                                    <h6 class="file-preview-title">
+                                        <i class="fas fa-file-image me-2"></i>Selected File
+                                    </h6>
                                     <div class="file-info">
                                         <div class="file-icon">
                                             <i class="fas fa-image"></i>
@@ -568,35 +761,39 @@
                         <div class="col-lg-4">
                             <div class="options-panel">
                                 <h5 class="options-title">
-                                    <i class="fas fa-cogs"></i>
+                                    <i class="fas fa-sliders-h"></i>
                                     Processing Options
                                 </h5>
                                 
-                                <div class="mb-3">
-                                    <label for="enhancement_level" class="form-label">Enhancement Level</label>
+                                <div class="mb-4">
+                                    <label for="enhancement_level" class="form-label">
+                                        <i class="fas fa-magic me-2"></i>Enhancement Level
+                                    </label>
                                     <select class="form-select" name="enhancement_level" id="enhancement_level">
-                                        <option value="auto" selected>Auto (Recommended)</option>
-                                        <option value="light">Light Processing</option>
-                                        <option value="medium">Medium Processing</option>
-                                        <option value="heavy">Heavy Processing</option>
+                                        <option value="auto" selected>🤖 Auto (AI-Optimized)</option>
+                                        <option value="light">⚡ Light Processing</option>
+                                        <option value="medium">🔧 Medium Processing</option>
+                                        <option value="heavy">🚀 Heavy Processing</option>
                                     </select>
                                     <div class="form-text">
-                                        <strong>Auto:</strong> Intelligently selects optimal processing<br>
-                                        <strong>Light:</strong> Basic enhancement and noise reduction<br>
+                                        <strong>Auto:</strong> AI intelligently selects optimal processing<br>
+                                        <strong>Light:</strong> Basic enhancement for high-quality images<br>
                                         <strong>Medium:</strong> Advanced filtering and correction<br>
-                                        <strong>Heavy:</strong> Maximum preprocessing for difficult images
+                                        <strong>Heavy:</strong> Maximum preprocessing for challenging images
                                     </div>
                                 </div>
                                 
-                                <div class="mb-3">
-                                    <label for="format_type" class="form-label">Text Formatting</label>
+                                <div class="mb-4">
+                                    <label for="format_type" class="form-label">
+                                        <i class="fas fa-align-left me-2"></i>Text Formatting
+                                    </label>
                                     <select class="form-select" name="format_type" id="format_type">
-                                        <option value="standard" selected>Standard</option>
-                                        <option value="preserve_structure">Preserve Structure</option>
-                                        <option value="clean">Clean & Minimal</option>
+                                        <option value="standard" selected>📄 Standard Format</option>
+                                        <option value="preserve_structure">🏗️ Preserve Structure</option>
+                                        <option value="clean">✨ Clean & Minimal</option>
                                     </select>
                                     <div class="form-text">
-                                        Choose how the extracted text should be formatted and cleaned.
+                                        Choose how the extracted text should be formatted and structured for your needs.
                                     </div>
                                 </div>
                                 
@@ -604,16 +801,16 @@
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="apply_corrections" id="apply_corrections" checked>
                                         <label class="form-check-label" for="apply_corrections">
-                                            Apply Text Corrections
+                                            <i class="fas fa-spell-check me-2"></i>Apply Text Corrections
                                         </label>
                                     </div>
                                     <div class="form-text">
-                                        Automatically correct common OCR errors and improve text quality.
+                                        Automatically correct common OCR errors and improve text quality using AI-powered correction algorithms.
                                     </div>
                                 </div>
                                 
                                 <button type="submit" class="btn btn-primary w-100" id="submitBtn">
-                                    <i class="fas fa-magic me-2"></i>Extract Text
+                                    <i class="fas fa-brain me-2"></i>Extract Text with AI
                                 </button>
                             </div>
                         </div>
@@ -625,12 +822,12 @@
                     <div class="spinner-border" role="status">
                         <span class="visually-hidden">Processing...</span>
                     </div>
-                    <h4 class="processing-title">Processing Your Image</h4>
-                    <p class="processing-subtitle">Our advanced AI is analyzing and extracting text from your image. This may take a few moments depending on image complexity and quality.</p>
-                    <div class="mt-3">
+                    <h4 class="processing-title">AI Processing Your Image</h4>
+                    <p class="processing-subtitle">Our advanced artificial intelligence is analyzing your image, applying optimal enhancements, and extracting text with maximum accuracy. This process may take a few moments depending on image complexity and quality.</p>
+                    <div class="mt-4">
                         <small class="text-muted">
                             <i class="fas fa-info-circle me-1"></i>
-                            Processing includes validation, enhancement, OCR, and text optimization
+                            Processing includes: Image validation → AI enhancement → Multi-engine OCR → Text optimization
                         </small>
                     </div>
                 </div>
@@ -639,20 +836,21 @@
             <!-- Footer -->
             <div class="footer">
                 <div class="footer-content">
-                    <p>&copy; {{ year }} Enhanced OCR System. Built with advanced computer vision and machine learning.</p>
+                    <p>&copy; {{ year }} Enhanced OCR System. Powered by advanced AI and computer vision technology.</p>
                     <div class="tech-stack">
-                        <span class="tech-badge">Flask</span>
-                        <span class="tech-badge">OpenCV</span>
-                        <span class="tech-badge">Tesseract</span>
-                        <span class="tech-badge">Python</span>
-                        <span class="tech-badge">Bootstrap</span>
+                        <span class="tech-badge">🐍 Python</span>
+                        <span class="tech-badge">🌶️ Flask</span>
+                        <span class="tech-badge">👁️ OpenCV</span>
+                        <span class="tech-badge">🔤 Tesseract</span>
+                        <span class="tech-badge">🎨 Bootstrap</span>
+                        <span class="tech-badge">🧠 AI/ML</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // DOM elements
         const uploadArea = document.getElementById('uploadArea');
@@ -665,27 +863,44 @@
         const submitBtn = document.getElementById('submitBtn');
         const processingSpinner = document.getElementById('processingSpinner');
 
-        // Drag and drop functionality
-        uploadArea.addEventListener('dragover', (e) => {
+        // Enhanced drag and drop functionality
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function preventDefaults(e) {
             e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight(e) {
             uploadArea.classList.add('drag-over');
-        });
+        }
 
-        uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
+        function unhighlight(e) {
             uploadArea.classList.remove('drag-over');
-        });
+        }
 
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('drag-over');
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
             
-            const files = e.dataTransfer.files;
             if (files.length > 0) {
                 fileInput.files = files;
                 handleFileSelect();
             }
-        });
+        }
 
         // File input change handler
         fileInput.addEventListener('change', handleFileSelect);
@@ -700,6 +915,19 @@
         function handleFileSelect() {
             const file = fileInput.files[0];
             if (file) {
+                // Validate file type
+                const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp', 'image/tiff', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    showAlert('Please select a valid image file (PNG, JPG, GIF, BMP, TIFF, WebP)', 'danger');
+                    return;
+                }
+
+                // Validate file size (16MB)
+                if (file.size > 16 * 1024 * 1024) {
+                    showAlert('File size must be less than 16MB', 'danger');
+                    return;
+                }
+
                 // Display file info
                 fileName.textContent = file.name;
                 fileSize.textContent = formatFileSize(file.size);
@@ -729,22 +957,24 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // Form submission handler
+        // Enhanced form submission handler
         uploadForm.addEventListener('submit', function(e) {
             if (!fileInput.files[0]) {
                 e.preventDefault();
-                showAlert('Please select a file first.', 'danger');
+                showAlert('Please select an image file first.', 'danger');
                 return;
             }
             
-            // Show processing state
+            // Show processing state with enhanced animation
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing with AI...';
             processingSpinner.style.display = 'block';
             processingSpinner.classList.add('slide-up');
             
-            // Scroll to spinner
-            processingSpinner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Smooth scroll to spinner
+            setTimeout(() => {
+                processingSpinner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
         });
 
         function showAlert(message, type) {
@@ -762,26 +992,27 @@
             // Auto-hide success alerts
             if (type === 'success') {
                 setTimeout(() => {
-                    alertDiv.style.transition = 'opacity 0.5s';
+                    alertDiv.style.transition = 'opacity 0.5s ease';
                     alertDiv.style.opacity = '0';
                     setTimeout(() => alertDiv.remove(), 500);
                 }, 5000);
             }
         }
 
-        // Auto-hide flash messages
+        // Auto-hide flash messages with enhanced animation
         setTimeout(() => {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
                 if (alert.classList.contains('alert-success')) {
-                    alert.style.transition = 'opacity 0.5s';
+                    alert.style.transition = 'all 0.5s ease';
+                    alert.style.transform = 'translateX(100%)';
                     alert.style.opacity = '0';
                     setTimeout(() => alert.remove(), 500);
                 }
             });
         }, 5000);
 
-        // Add smooth animations on scroll
+        // Enhanced intersection observer for animations
         const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -50px 0px'
@@ -796,12 +1027,47 @@
             });
         }, observerOptions);
 
-        // Observe feature cards for animation
-        document.querySelectorAll('.feature-card').forEach(card => {
+        // Observe elements for animation
+        document.querySelectorAll('.feature-card').forEach((card, index) => {
             card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
             observer.observe(card);
+        });
+
+        // Enhanced keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'u':
+                        e.preventDefault();
+                        fileInput.click();
+                        break;
+                    case 'Enter':
+                        if (fileInput.files[0]) {
+                            e.preventDefault();
+                            uploadForm.submit();
+                        }
+                        break;
+                }
+            }
+        });
+
+        // Add smooth scroll behavior
+        document.documentElement.style.scrollBehavior = 'smooth';
+
+        // Enhanced loading animation
+        window.addEventListener('load', () => {
+            document.body.style.opacity = '1';
+        });
+
+        // Add parallax effect to header
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const header = document.querySelector('.header');
+            if (header) {
+                header.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
         });
     </script>
 </body>
