@@ -8,3 +8,4 @@ scikit-image
 scipy
 gunicorn==21.2.0
 python-dotenv
+tensorflow-cpu

@@ -27,6 +27,9 @@ from text_processor import TextProcessor, process_ocr_text
 # Initialize Flask app
 app = Flask(__name__)
 
+from handwriting.api import bp as handwriting_bp
+app.register_blueprint(handwriting_bp)
+
 # Load configuration
 config_class = get_config()
 app.config.from_object(config_class)
