@@ -1,82 +1,128 @@
-# Handwritten Digit Recognition
+# Handwritten Digit Recognition System
 
-A simple, lightweight web application for recognizing handwritten digits (0-9).
+A lightweight, modern web application for recognizing handwritten digits (0-9) using a Convolutional Neural Network (CNN).
 
-Built with:
-- **Python** & **Flask**
-- **TensorFlow/Keras** (CNN Model)
-- **MNIST Dataset**
+## Overview
 
-## Project Structure
+This project uses TensorFlow/Keras to train a model on the MNIST dataset. The web interface allows users to upload images of handwritten digits, which are then processed and classified by the model in real-time.
 
-- `handwriting/`: Contains the core logic.
-  - `model.py`: CNN architecture definition.
-  - `train_mnist.py`: Script to train the model on MNIST data.
-  - `predict.py`: Image preprocessing and prediction logic.
-  - `api.py`: API endpoints.
-- `templates/`: HTML templates for the web UI.
-- `models/`: Directory where trained models are saved.
-- `main.py`: Entry point for the web server.
+## Prerequisites
 
-## Installation
+- **Python 3.8+**
+- **pip** (Python package installer)
+- **Docker** (optional, for containerized deployment)
 
-1. **Clone the repo**
-   ```bash
-   git clone <repo_url>
-   cd <repo_name>
-   ```
+## 🚀 Quick Start (Local)
 
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 1. Setup Environment
 
-## Training the Model
-
-Before running the app, you need to train the model. This script downloads the MNIST dataset and trains a Convolutional Neural Network.
+First, clone the repository and install the dependencies.
 
 ```bash
-# Must be run from the root directory
-PYTHONPATH=. python handwriting/train_mnist.py --epochs 5 --save models/digit_cnn.h5
+# Clone the repository
+git clone <repository_url>
+cd <repository_folder>
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-This will save the best model to `models/digit_cnn.h5`.
+### 2. Train the Model
 
-## Running the Web App
-
-Start the Flask server:
+You must train the model before running the application. We have provided a helper script for this.
 
 ```bash
-python main.py
+# Run training script (Linux/Mac)
+bash run_training.sh
+
+# Or manually:
+# PYTHONPATH=. python handwriting/train_mnist.py --epochs 5 --save models/digit_cnn.h5
 ```
 
-Open your browser to `http://localhost:5000`. You will see a simple interface to upload digit images.
+This will:
+- Download the MNIST dataset.
+- Train the CNN for 5 epochs.
+- Save the trained model to `models/digit_cnn.h5`.
 
-## API Usage
+### 3. Run the Application
 
-You can also use the API directly:
+Start the web server:
 
+```bash
+# Run application script (Linux/Mac)
+bash run_app.sh
+
+# Or manually:
+# python main.py
+```
+
+Open your browser to `http://localhost:5000`.
+
+---
+
+## 🐳 Docker Deployment
+
+You can run both training and the web application using Docker.
+
+### 1. Build the Image
+
+```bash
+docker build -t digit-recognizer .
+```
+
+### 2. Train inside Docker
+
+To train the model inside a container and save the file to your host machine, mount the `models` directory:
+
+```bash
+docker run --rm -v $(pwd)/models:/app/models digit-recognizer python handwriting/train_mnist.py --epochs 5
+```
+
+### 3. Run the App
+
+Run the container, ensuring the trained model is available (either trained previously or mounted):
+
+```bash
+docker run -p 5000:5000 -v $(pwd)/models:/app/models digit-recognizer
+```
+
+Open `http://localhost:5000` in your browser.
+
+---
+
+## 🛠 Project Structure
+
+- **`handwriting/`**: Core application logic.
+  - `model.py`: Neural network architecture.
+  - `train_mnist.py`: Training script.
+  - `predict.py`: Image preprocessing and inference.
+  - `api.py`: Flask blueprint for API routes.
+- **`templates/`**: HTML frontend.
+- **`models/`**: Stores the trained `.h5` model files.
+- **`main.py`**: Application entry point.
+- **`run_training.sh`**: Helper script for training.
+- **`run_app.sh`**: Helper script for running the server.
+
+## API Documentation
+
+The application exposes a REST API for programmatic access.
+
+### Predict Digit
 **Endpoint:** `POST /api/digit_recognize`
-**Data:** Form-data with a file field named `file`.
 
-Example:
+**Parameters:**
+- `file`: The image file (form-data).
+
+**Example Request:**
 ```bash
-curl -X POST -F "file=@my_digit.png" http://localhost:5000/api/digit_recognize
+curl -X POST -F "file=@digit.png" http://localhost:5000/api/digit_recognize
 ```
 
-Response:
+**Response:**
 ```json
 {
   "success": true,
-  "digit": 7,
-  "probability": 0.99
+  "digit": 3,
+  "probability": 0.985
 }
-```
-
-## Testing
-
-Run the unit tests:
-
-```bash
-PYTHONPATH=. python tests/test_handwriting.py
 ```
