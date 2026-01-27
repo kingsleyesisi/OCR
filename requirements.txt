@@ -1,11 +1,6 @@
 flask==2.3.3
-pytesseract==0.3.10
-opencv-python
 numpy
 Pillow
-python-magic==0.4.27
-scikit-image
-scipy
 gunicorn==21.2.0
 python-dotenv
 tensorflow-cpu
