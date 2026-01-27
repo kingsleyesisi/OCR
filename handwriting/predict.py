@@ -36,8 +36,13 @@ def preprocess_image(pil_image, target_size=(28, 28)):
     if np.mean(img_np) > 127:
         img = ImageOps.invert(img)
 
+    # Threshold to zero out noise for better cropping
+    # This helps getbbox() find the actual digit instead of noise
+    # We use a temporary image for bbox calculation
+    thresholded = img.point(lambda p: 255 if p > 50 else 0)
+    bbox = thresholded.getbbox()
+
     # Crop to bounding box of the content
-    bbox = img.getbbox()
     if bbox:
         img = img.crop(bbox)
 

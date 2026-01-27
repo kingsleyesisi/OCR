@@ -49,7 +49,7 @@ The best model (based on validation accuracy) will be saved to `models/digit_cnn
 
 2.  **Access the Web UI**:
     Open your browser and navigate to:
-    `http://localhost:5000/digit_recognize`
+    `http://localhost:5000`
 
     Here you can upload an image file containing a handwritten digit to get a prediction.
 

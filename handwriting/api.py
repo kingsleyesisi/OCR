@@ -5,10 +5,6 @@ from .predict import predict_from_pil_image
 
 bp = Blueprint('handwriting', __name__)
 
-@bp.route('/digit_recognize', methods=['GET'])
-def digit_recognize_page():
-    return render_template('digit_recognize.html')
-
 @bp.route('/api/digit_recognize', methods=['POST'])
 def digit_recognize_api():
     if 'file' not in request.files:
