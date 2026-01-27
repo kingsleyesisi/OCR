@@ -1,31 +1,31 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11-slim
 
-# Set environment variables for Python
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Install system dependencies required for Tesseract and OpenCV
-# libgl1-mesa-glx is needed for headless OpenCV
+# Install system dependencies
+# We only need basic libs now, removed Tesseract/OpenCV system deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    tesseract-ocr \
-    libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file into the container
+# Copy requirements and install
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application's code into the container
+# Copy application code
 COPY . .
 
-# Expose the port the app runs on
+# Ensure models directory exists
+RUN mkdir -p models
+
+# Expose port
 EXPOSE 5000
 
-# Define the command to run the application using Gunicorn, a production WSGI server
+# Default command runs the app using Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]

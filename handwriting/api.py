@@ -21,13 +21,12 @@ def digit_recognize_api():
         # Predict
         result = predict_from_pil_image(img)
 
-        if 'error' in result:
-             return jsonify({'success': False, 'error': result['error']})
+        if not result.get('success', True):
+             return jsonify({'success': False, 'error': result.get('error', 'Unknown error')})
 
         return jsonify({
             'success': True,
-            'digit': result['digit'],
-            'probability': result['probability']
+            'predictions': result['predictions']
         })
 
     except Exception as e:
