@@ -4,3 +4,4 @@ Pillow
 gunicorn==21.2.0
 python-dotenv
 tensorflow-cpu
+opencv-python-headless

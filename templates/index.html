@@ -31,14 +31,16 @@
             text-align: center;
         }
         .digit-display {
-            font-size: 4rem;
+            font-size: 3rem;
             font-weight: bold;
             color: #0d6efd;
-            line-height: 1;
+            line-height: 1.2;
+            word-wrap: break-word;
         }
         .prob-display {
             color: #6c757d;
-            font-size: 1.1rem;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
         }
         .preview-img {
             max-width: 150px;
@@ -70,7 +72,7 @@
     <div class="container">
         <div class="main-card mx-auto">
             <h1 class="text-center mb-4">Digit Recognizer</h1>
-            <p class="text-center text-muted mb-4">Upload an image of a handwritten digit (0-9).</p>
+            <p class="text-center text-muted mb-4">Upload an image of handwritten digits (0-9).</p>
 
             <form id="uploadForm">
                 <div class="drag-area" id="dragArea">
@@ -85,16 +87,16 @@
                 </div>
 
                 <div class="d-grid gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>Recognize Digit</button>
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>Recognize</button>
                 </div>
             </form>
 
             <p id="error" class="error-msg text-center"></p>
 
             <div id="result" class="result-box">
-                <h5 class="text-uppercase text-secondary fs-6 mb-3">Prediction</h5>
+                <h5 class="text-uppercase text-secondary fs-6 mb-3">Detected Digits</h5>
                 <div class="digit-display" id="digit">-</div>
-                <div class="prob-display mt-2">Confidence: <span id="probability">-</span></div>
+                <div class="prob-display" id="probability"></div>
                 <div id="imageContainer"></div>
             </div>
         </div>
@@ -171,8 +173,18 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    digitDisplay.textContent = data.digit;
-                    probDisplay.textContent = (data.probability * 100).toFixed(1) + '%';
+                    if (data.predictions && data.predictions.length > 0) {
+                        // Display digits joined by space
+                        const digits = data.predictions.map(p => p.digit).join(' ');
+                        digitDisplay.textContent = digits;
+
+                        // Display probabilities
+                        const probs = data.predictions.map((p, i) => `Digit ${p.digit}: ${(p.probability * 100).toFixed(1)}%`).join('<br>');
+                        probDisplay.innerHTML = probs;
+                    } else {
+                        digitDisplay.textContent = "None";
+                        probDisplay.textContent = "No confident digits detected.";
+                    }
 
                     // Display uploaded image
                     const img = document.createElement('img');
@@ -190,7 +202,7 @@
                 errorP.style.display = 'block';
                 console.error(err);
             } finally {
-                submitBtn.textContent = 'Recognize Digit';
+                submitBtn.textContent = 'Recognize';
                 submitBtn.disabled = false;
             }
         });
