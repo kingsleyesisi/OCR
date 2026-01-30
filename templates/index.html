@@ -8,110 +8,164 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #f0f2f5;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .content-wrapper {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 2rem 0;
         }
         .main-card {
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
             background: white;
-            padding: 2rem;
+            padding: 2.5rem;
         }
         .result-box {
             display: none;
             margin-top: 2rem;
-            padding: 1.5rem;
-            border-radius: 10px;
-            background-color: #e9ecef;
+            padding: 2rem;
+            border-radius: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
             text-align: center;
         }
         .digit-display {
-            font-size: 3rem;
-            font-weight: bold;
+            font-size: 3.5rem;
+            font-weight: 800;
             color: #0d6efd;
             line-height: 1.2;
-            word-wrap: break-word;
+            margin: 1rem 0;
+            letter-spacing: 0.5rem;
         }
         .prob-display {
             color: #6c757d;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            text-align: left;
+            display: inline-block;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
         }
         .preview-img {
-            max-width: 150px;
-            max-height: 150px;
-            margin-top: 1rem;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 1.5rem;
+            border: 3px solid #dee2e6;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
         .drag-area {
-            border: 2px dashed #adb5bd;
-            border-radius: 10px;
-            padding: 2rem;
+            border: 3px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 3rem 2rem;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            background-color: #ffffff;
         }
         .drag-area:hover {
             border-color: #0d6efd;
-            background-color: #f1f8ff;
+            background-color: #f8fbff;
+            transform: translateY(-2px);
+        }
+        .drag-area h5 {
+            margin-top: 1rem;
+            color: #495057;
+        }
+        .drag-area i {
+            font-size: 3rem;
+            color: #6c757d;
         }
         .error-msg {
             color: #dc3545;
             margin-top: 1rem;
             display: none;
+            padding: 1rem;
+            background-color: #fdf2f2;
+            border-radius: 8px;
+            border: 1px solid #f8d7da;
+        }
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: #6c757d;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="main-card mx-auto">
-            <h1 class="text-center mb-4">Digit Recognizer</h1>
-            <p class="text-center text-muted mb-4">Upload an image of handwritten digits (0-9).</p>
+    <div class="content-wrapper">
+        <div class="container">
+            <div class="main-card mx-auto">
+                <h1 class="text-center mb-2 fw-bold text-primary">Digit Recognizer</h1>
+                <p class="text-center text-muted mb-4">Upload an image containing handwritten digits (0-9)</p>
 
-            <form id="uploadForm">
-                <div class="drag-area" id="dragArea">
-                    <div class="mb-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-cloud-upload text-secondary" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.633 14.533 11 12.5 11h-11C.667 11 0 9.633 0 7.773 0 6.137 1.242 4.804 2.834 4.579a5.53 5.53 0 0 1 1.572-3.237zm0 1a4.53 4.53 0 0 0-3.898 2.245 1.517 1.517 0 0 0-.693 2.163c.192.35.536.602.946.742l.526.177.306.91a2.89 2.89 0 0 1-.36 1.838l-.133.245A1.37 1.37 0 0 0 1.5 10h11a1.37 1.37 0 0 0 1.298-1.573l-.133-.246a2.89 2.89 0 0 1-.36-1.838l.306-.91.526-.177c.41-.14.754-.392.946-.742a1.517 1.517 0 0 0-.693-2.163 4.53 4.53 0 0 0-3.898-2.245z"/>
-                            <path fill-rule="evenodd" d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
-                        </svg>
+                <form id="uploadForm">
+                    <div class="drag-area" id="dragArea">
+                        <div class="mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-cloud-arrow-up text-primary opacity-50" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M7.646 5.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2z"/>
+                                <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.633 14.533 11 12.5 11h-11C.667 11 0 9.633 0 7.773 0 6.137 1.242 4.804 2.834 4.579a5.53 5.53 0 0 1 1.572-3.237zm0 1a4.53 4.53 0 0 0-3.898 2.245 1.517 1.517 0 0 0-.693 2.163c.192.35.536.602.946.742l.526.177.306.91a2.89 2.89 0 0 1-.36 1.838l-.133.245A1.37 1.37 0 0 0 1.5 10h11a1.37 1.37 0 0 0 1.298-1.573l-.133-.246a2.89 2.89 0 0 1-.36-1.838l.306-.91.526-.177c.41-.14.754-.392.946-.742a1.517 1.517 0 0 0-.693-2.163 4.53 4.53 0 0 0-3.898-2.245z"/>
+                            </svg>
+                        </div>
+                        <h5 class="fw-normal">Click or Drag & Drop Image Here</h5>
+                        <input type="file" id="fileInput" name="file" accept="image/*" class="d-none" required>
                     </div>
-                    <h5>Click or Drag & Drop to Upload</h5>
-                    <input type="file" id="fileInput" name="file" accept="image/*" class="d-none" required>
+
+                    <div class="d-grid gap-2 mt-4 d-md-flex justify-content-center">
+                        <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill" id="submitBtn" disabled>
+                            Recognize Digits
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-lg px-4 rounded-pill" id="clearBtn" style="display: none;">
+                            Clear
+                        </button>
+                    </div>
+                </form>
+
+                <div id="error" class="error-msg text-center"></div>
+
+                <div id="result" class="result-box">
+                    <h5 class="text-uppercase text-secondary fs-6 mb-2 fw-bold">Detected Sequence</h5>
+                    <div class="digit-display" id="digit">-</div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="prob-display w-100" id="probability"></div>
+                        </div>
+                    </div>
+
+                    <div id="imageContainer"></div>
                 </div>
-
-                <div class="d-grid gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>Recognize</button>
-                </div>
-            </form>
-
-            <p id="error" class="error-msg text-center"></p>
-
-            <div id="result" class="result-box">
-                <h5 class="text-uppercase text-secondary fs-6 mb-3">Detected Digits</h5>
-                <div class="digit-display" id="digit">-</div>
-                <div class="prob-display" id="probability"></div>
-                <div id="imageContainer"></div>
             </div>
         </div>
     </div>
+
+    <footer>
+        <p>&copy; 2026 Handwritten Digit Recognition System. Powered by TensorFlow & Flask.</p>
+    </footer>
 
     <script>
         const dragArea = document.getElementById('dragArea');
         const fileInput = document.getElementById('fileInput');
         const submitBtn = document.getElementById('submitBtn');
+        const clearBtn = document.getElementById('clearBtn');
         const uploadForm = document.getElementById('uploadForm');
         const resultDiv = document.getElementById('result');
-        const errorP = document.getElementById('error');
+        const errorDiv = document.getElementById('error');
         const digitDisplay = document.getElementById('digit');
         const probDisplay = document.getElementById('probability');
         const imgContainer = document.getElementById('imageContainer');
+        const dragText = dragArea.querySelector('h5');
 
         // Drag & Drop events
         dragArea.addEventListener('click', () => fileInput.click());
@@ -120,17 +174,20 @@
             e.preventDefault();
             dragArea.style.backgroundColor = '#f1f8ff';
             dragArea.style.borderColor = '#0d6efd';
+            dragText.style.color = '#0d6efd';
         });
 
         dragArea.addEventListener('dragleave', () => {
-            dragArea.style.backgroundColor = '';
-            dragArea.style.borderColor = '#adb5bd';
+            dragArea.style.backgroundColor = '#ffffff';
+            dragArea.style.borderColor = '#dee2e6';
+            dragText.style.color = '#495057';
         });
 
         dragArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            dragArea.style.backgroundColor = '';
-            dragArea.style.borderColor = '#adb5bd';
+            dragArea.style.backgroundColor = '#ffffff';
+            dragArea.style.borderColor = '#dee2e6';
+            dragText.style.color = '#495057';
 
             if (e.dataTransfer.files.length > 0) {
                 fileInput.files = e.dataTransfer.files;
@@ -140,14 +197,26 @@
 
         fileInput.addEventListener('change', handleFileSelection);
 
+        clearBtn.addEventListener('click', resetUI);
+
         function handleFileSelection() {
             if (fileInput.files.length > 0) {
                 submitBtn.disabled = false;
-                dragArea.querySelector('h5').textContent = fileInput.files[0].name;
+                dragText.innerHTML = `<span class="text-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill me-2" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>${fileInput.files[0].name}</span>`;
+                clearBtn.style.display = 'block';
             } else {
-                submitBtn.disabled = true;
-                dragArea.querySelector('h5').textContent = 'Click or Drag & Drop to Upload';
+                resetUI();
             }
+        }
+
+        function resetUI() {
+            fileInput.value = '';
+            submitBtn.disabled = true;
+            clearBtn.style.display = 'none';
+            resultDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            imgContainer.innerHTML = '';
+            dragText.textContent = 'Click or Drag & Drop Image Here';
         }
 
         uploadForm.addEventListener('submit', async (e) => {
@@ -156,9 +225,11 @@
 
             // UI Reset
             resultDiv.style.display = 'none';
-            errorP.style.display = 'none';
+            errorDiv.style.display = 'none';
             imgContainer.innerHTML = '';
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
             submitBtn.disabled = true;
 
             const formData = new FormData();
@@ -179,11 +250,18 @@
                         digitDisplay.textContent = digits;
 
                         // Display probabilities
-                        const probs = data.predictions.map((p, i) => `Digit ${p.digit}: ${(p.probability * 100).toFixed(1)}%`).join('<br>');
-                        probDisplay.innerHTML = probs;
+                        const probs = data.predictions.map((p, i) => {
+                            const conf = (p.probability * 100).toFixed(1);
+                            const colorClass = conf > 80 ? 'text-success' : (conf > 50 ? 'text-warning' : 'text-danger');
+                            return `<div class="d-flex justify-content-between mb-1 border-bottom pb-1">
+                                <span>Position ${i+1} (Digit <strong>${p.digit}</strong>)</span>
+                                <span class="${colorClass} fw-bold">${conf}%</span>
+                            </div>`;
+                        }).join('');
+                        probDisplay.innerHTML = `<h6 class="mb-3 border-bottom pb-2">Confidence Scores</h6>${probs}`;
                     } else {
-                        digitDisplay.textContent = "None";
-                        probDisplay.textContent = "No confident digits detected.";
+                        digitDisplay.textContent = "?";
+                        probDisplay.textContent = "No confident digits detected. Please try a clearer image.";
                     }
 
                     // Display uploaded image
@@ -193,16 +271,19 @@
                     imgContainer.appendChild(img);
 
                     resultDiv.style.display = 'block';
+                    // Scroll to result
+                    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
                 } else {
-                    errorP.textContent = data.error || 'Unknown error occurred.';
-                    errorP.style.display = 'block';
+                    errorDiv.textContent = data.error || 'Unknown error occurred.';
+                    errorDiv.style.display = 'block';
                 }
             } catch (err) {
-                errorP.textContent = 'An error occurred while communicating with the server.';
-                errorP.style.display = 'block';
+                errorDiv.textContent = 'An error occurred while communicating with the server.';
+                errorDiv.style.display = 'block';
                 console.error(err);
             } finally {
-                submitBtn.textContent = 'Recognize';
+                submitBtn.innerHTML = originalBtnText;
                 submitBtn.disabled = false;
             }
         });
