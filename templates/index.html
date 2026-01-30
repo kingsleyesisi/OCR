@@ -3,290 +3,843 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Handwritten Digit Recognition</title>
-    <!-- Bootstrap CSS -->
+    <title>Google Lens-like OCR System - Advanced Image to Text Conversion</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            background-color: #f0f2f5;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+        :root {
+            --primary-color: #4285f4;
+            --primary-dark: #3367d6;
+            --secondary-color: #5f6368;
+            --success-color: #34a853;
+            --warning-color: #fbbc04;
+            --danger-color: #ea4335;
+            --light-bg: #f8f9fa;
+            --dark-bg: #202124;
+            --border-color: #dadce0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
         }
-        .content-wrapper {
-            flex: 1;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            box-shadow: var(--shadow-xl);
+            backdrop-filter: blur(20px);
+            margin: 2rem auto;
+            max-width: 1400px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header .lead {
+            font-size: 1.25rem;
+            font-weight: 400;
+            opacity: 0.95;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .content-section {
+            padding: 3rem 2rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem 0;
+            margin-bottom: 1.5rem;
+            color: white;
+            font-size: 1.5rem;
         }
-        .main-card {
-            max-width: 700px;
-            width: 100%;
-            border-radius: 20px;
-            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
-            background: white;
-            padding: 2.5rem;
+
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-bg);
+            margin-bottom: 0.75rem;
         }
-        .result-box {
-            display: none;
-            margin-top: 2rem;
-            padding: 2rem;
-            border-radius: 15px;
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            text-align: center;
-        }
-        .digit-display {
-            font-size: 3.5rem;
-            font-weight: 800;
-            color: #0d6efd;
-            line-height: 1.2;
-            margin: 1rem 0;
-            letter-spacing: 0.5rem;
-        }
-        .prob-display {
-            color: #6c757d;
+
+        .feature-description {
+            color: var(--secondary-color);
             font-size: 0.95rem;
             line-height: 1.6;
-            text-align: left;
-            display: inline-block;
-            background: white;
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
         }
-        .preview-img {
-            max-width: 200px;
-            max-height: 200px;
-            margin-top: 1.5rem;
-            border: 3px solid #dee2e6;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+
+        .upload-section {
+            background: var(--light-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
         }
-        .drag-area {
-            border: 3px dashed #dee2e6;
-            border-radius: 15px;
+
+        .upload-area {
+            border: 3px dashed var(--border-color);
+            border-radius: 16px;
             padding: 3rem 2rem;
             text-align: center;
-            cursor: pointer;
             transition: all 0.3s ease;
-            background-color: #ffffff;
+            background: white;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
         }
-        .drag-area:hover {
-            border-color: #0d6efd;
-            background-color: #f8fbff;
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(66, 133, 244, 0.02);
+        }
+
+        .upload-area.drag-over {
+            border-color: var(--primary-color);
+            background: rgba(66, 133, 244, 0.05);
+            transform: scale(1.02);
+        }
+
+        .upload-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .upload-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark-bg);
+            margin-bottom: 0.75rem;
+        }
+
+        .upload-subtitle {
+            color: var(--secondary-color);
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border: none;
+            border-radius: 12px;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
             transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
         }
-        .drag-area h5 {
-            margin-top: 1rem;
-            color: #495057;
+
+        .btn-primary:active {
+            transform: translateY(0);
         }
-        .drag-area i {
-            font-size: 3rem;
-            color: #6c757d;
+
+        .options-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
         }
-        .error-msg {
-            color: #dc3545;
-            margin-top: 1rem;
-            display: none;
-            padding: 1rem;
-            background-color: #fdf2f2;
+
+        .options-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-bg);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-bg);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-select, .form-control {
+            border: 2px solid var(--border-color);
             border-radius: 8px;
-            border: 1px solid #f8d7da;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
         }
-        footer {
+
+        .form-select:focus, .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+        }
+
+        .camera-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
             text-align: center;
-            padding: 1.5rem;
-            color: #6c757d;
+        }
+
+        .camera-button {
+            background: linear-gradient(135deg, var(--success-color), #2d8a47);
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+            margin: 1rem;
+        }
+
+        .camera-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, #2d8a47, var(--success-color));
+        }
+
+        .camera-icon {
+            margin-right: 0.5rem;
+        }
+
+        .processing-indicator {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            display: none;
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            margin-top: 2rem;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark-bg);
+        }
+
+        .confidence-badge {
+            background: linear-gradient(135deg, var(--success-color), #2d8a47);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
             font-size: 0.9rem;
+        }
+
+        .extracted-text {
+            background: var(--light-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .text-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--light-bg);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            margin-top: 0.25rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            background: #2d8a47;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 2px solid var(--danger-color);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--danger-color);
+            margin: 1rem 0;
+            display: none;
+        }
+
+        .success-message {
+            background: #f0fdf4;
+            border: 2px solid var(--success-color);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--success-color);
+            margin: 1rem 0;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .content-section {
+                padding: 2rem 1rem;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="content-wrapper">
-        <div class="container">
-            <div class="main-card mx-auto">
-                <h1 class="text-center mb-2 fw-bold text-primary">Digit Recognizer</h1>
-                <p class="text-center text-muted mb-4">Upload an image containing handwritten digits (0-9)</p>
+    <div class="main-container">
+        <div class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-camera"></i> Smart OCR</h1>
+                <p class="lead">Google Lens-like image to text conversion with advanced preprocessing and multi-line support</p>
+            </div>
+        </div>
 
-                <form id="uploadForm">
-                    <div class="drag-area" id="dragArea">
-                        <div class="mb-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-cloud-arrow-up text-primary opacity-50" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M7.646 5.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2z"/>
-                                <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.633 14.533 11 12.5 11h-11C.667 11 0 9.633 0 7.773 0 6.137 1.242 4.804 2.834 4.579a5.53 5.53 0 0 1 1.572-3.237zm0 1a4.53 4.53 0 0 0-3.898 2.245 1.517 1.517 0 0 0-.693 2.163c.192.35.536.602.946.742l.526.177.306.91a2.89 2.89 0 0 1-.36 1.838l-.133.245A1.37 1.37 0 0 0 1.5 10h11a1.37 1.37 0 0 0 1.298-1.573l-.133-.246a2.89 2.89 0 0 1-.36-1.838l.306-.91.526-.177c.41-.14.754-.392.946-.742a1.517 1.517 0 0 0-.693-2.163 4.53 4.53 0 0 0-3.898-2.245z"/>
-                            </svg>
+        <div class="content-section">
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <h3 class="feature-title">Advanced Preprocessing</h3>
+                    <p class="feature-description">Intelligent image enhancement with perspective correction, noise reduction, and text-specific optimization.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-text-height"></i>
+                    </div>
+                    <h3 class="feature-title">Multi-Line Extraction</h3>
+                    <p class="feature-description">Extract complete documents with proper paragraph structure and formatting preservation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <h3 class="feature-title">Language Detection</h3>
+                    <p class="feature-description">Automatic language detection and optimization for better accuracy across multiple languages.</p>
+                </div>
+            </div>
+
+            <form id="ocrForm" enctype="multipart/form-data">
+                <div class="upload-section">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h3 class="upload-title">Upload Image or Take Photo</h3>
+                            <p class="upload-subtitle">Drag and drop your image here, or click to browse</p>
+                            <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;">
+                            <div id="filePreview" class="mt-2"></div>
+                            <button type="button" class="btn btn-primary" onclick="document.getElementById('imageInput').click()">
+                                <i class="fas fa-folder-open"></i> Choose File
+                            </button>
                         </div>
-                        <h5 class="fw-normal">Click or Drag & Drop Image Here</h5>
-                        <input type="file" id="fileInput" name="file" accept="image/*" class="d-none" required>
                     </div>
+                </div>
 
-                    <div class="d-grid gap-2 mt-4 d-md-flex justify-content-center">
-                        <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill" id="submitBtn" disabled>
-                            Recognize Digits
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-lg px-4 rounded-pill" id="clearBtn" style="display: none;">
-                            Clear
-                        </button>
-                    </div>
-                </form>
+                <div class="camera-section">
+                    <h3>Or Use Your Camera</h3>
+                    <p>Take a photo directly for instant text extraction</p>
+                    <button type="button" class="camera-button" onclick="openCamera()">
+                        <i class="fas fa-camera camera-icon"></i>Open Camera
+                    </button>
+                </div>
 
-                <div id="error" class="error-msg text-center"></div>
-
-                <div id="result" class="result-box">
-                    <h5 class="text-uppercase text-secondary fs-6 mb-2 fw-bold">Detected Sequence</h5>
-                    <div class="digit-display" id="digit">-</div>
-
-                    <div class="row justify-content-center">
-                        <div class="col-md-8">
-                            <div class="prob-display w-100" id="probability"></div>
+                <div class="options-panel">
+                    <h3 class="options-title">Processing Options</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="enhancementLevel" class="form-label">Enhancement Level</label>
+                            <select class="form-select" id="enhancementLevel" name="enhancement_level">
+                                <option value="auto">Auto (Recommended)</option>
+                                <option value="minimal">Minimal</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="aggressive">Aggressive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="textCorrections" class="form-label">Text Corrections</label>
+                            <select class="form-select" id="textCorrections" name="apply_text_corrections">
+                                <option value="true">Enable</option>
+                                <option value="false">Disable</option>
+                            </select>
                         </div>
                     </div>
+                </div>
 
-                    <div id="imageContainer"></div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-magic"></i> Extract Text
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-lg ms-2" onclick="testFileInput()">
+                        <i class="fas fa-bug"></i> Test File Input
+                    </button>
+                </div>
+            </form>
+
+            <div class="processing-indicator" id="processingIndicator">
+                <div class="spinner"></div>
+                <h4>Processing your image...</h4>
+                <p>This may take a few seconds for complex images</p>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <div class="result-section" id="resultSection">
+                <div class="result-header">
+                    <h3 class="result-title">Extracted Text</h3>
+                    <span class="confidence-badge" id="confidenceBadge">95% Confidence</span>
+                </div>
+
+                <div class="text-stats">
+                    <div class="stat-card">
+                        <span class="stat-number" id="wordCount">0</span>
+                        <div class="stat-label">Words</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="lineCount">0</span>
+                        <div class="stat-label">Lines</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="charCount">0</span>
+                        <div class="stat-label">Characters</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="paraCount">0</span>
+                        <div class="stat-label">Paragraphs</div>
+                    </div>
+                </div>
+
+                <div class="extracted-text" id="extractedText" contenteditable="true"></div>
+
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="copyText()">
+                        <i class="fas fa-copy"></i> Copy Text
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="downloadText()">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="clearResults()">
+                        <i class="fas fa-redo"></i> Process Another
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2026 Handwritten Digit Recognition System. Powered by TensorFlow & Flask.</p>
-    </footer>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const dragArea = document.getElementById('dragArea');
-        const fileInput = document.getElementById('fileInput');
-        const submitBtn = document.getElementById('submitBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const uploadForm = document.getElementById('uploadForm');
-        const resultDiv = document.getElementById('result');
-        const errorDiv = document.getElementById('error');
-        const digitDisplay = document.getElementById('digit');
-        const probDisplay = document.getElementById('probability');
-        const imgContainer = document.getElementById('imageContainer');
-        const dragText = dragArea.querySelector('h5');
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const imageInput = document.getElementById('imageInput');
+        const form = document.getElementById('ocrForm');
+        const processingIndicator = document.getElementById('processingIndicator');
+        const resultSection = document.getElementById('resultSection');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const filePreview = document.getElementById('filePreview');
 
-        // Drag & Drop events
-        dragArea.addEventListener('click', () => fileInput.click());
-
-        dragArea.addEventListener('dragover', (e) => {
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dragArea.style.backgroundColor = '#f1f8ff';
-            dragArea.style.borderColor = '#0d6efd';
-            dragText.style.color = '#0d6efd';
+            uploadArea.classList.add('drag-over');
         });
 
-        dragArea.addEventListener('dragleave', () => {
-            dragArea.style.backgroundColor = '#ffffff';
-            dragArea.style.borderColor = '#dee2e6';
-            dragText.style.color = '#495057';
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
         });
 
-        dragArea.addEventListener('drop', (e) => {
+        uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            dragArea.style.backgroundColor = '#ffffff';
-            dragArea.style.borderColor = '#dee2e6';
-            dragText.style.color = '#495057';
-
-            if (e.dataTransfer.files.length > 0) {
-                fileInput.files = e.dataTransfer.files;
-                handleFileSelection();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                imageInput.files = files;
+                handleFileSelect(files[0]);
             }
         });
 
-        fileInput.addEventListener('change', handleFileSelection);
+        uploadArea.addEventListener('click', () => {
+            imageInput.click();
+        });
 
-        clearBtn.addEventListener('click', resetUI);
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
 
-        function handleFileSelection() {
-            if (fileInput.files.length > 0) {
-                submitBtn.disabled = false;
-                dragText.innerHTML = `<span class="text-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill me-2" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>${fileInput.files[0].name}</span>`;
-                clearBtn.style.display = 'block';
+        function handleFileSelect(file) {
+            if (file.type.startsWith('image/')) {
+                filePreview.innerHTML = `<span style="color: var(--success-color);"><i class="fas fa-check-circle"></i> ${file.name} (Ready to process)</span>`;
             } else {
-                resetUI();
+                showError('Please select a valid image file');
+                filePreview.innerHTML = '';
             }
         }
 
-        function resetUI() {
-            fileInput.value = '';
-            submitBtn.disabled = true;
-            clearBtn.style.display = 'none';
-            resultDiv.style.display = 'none';
-            errorDiv.style.display = 'none';
-            imgContainer.innerHTML = '';
-            dragText.textContent = 'Click or Drag & Drop Image Here';
-        }
-
-        uploadForm.addEventListener('submit', async (e) => {
+        // Form submission
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (fileInput.files.length === 0) return;
 
-            // UI Reset
-            resultDiv.style.display = 'none';
-            errorDiv.style.display = 'none';
-            imgContainer.innerHTML = '';
+            const formData = new FormData(form);
+            const file = imageInput.files[0];
 
-            const originalBtnText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
-            submitBtn.disabled = true;
+            console.log('Form submitted');
+            console.log('File input files:', imageInput.files);
+            console.log('Selected file:', file);
 
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            if (!file) {
+                showError('Please select an image file');
+                return;
+            }
+
+            console.log('File details:', {
+                name: file.name,
+                type: file.type,
+                size: file.size
+            });
+
+            // Show processing indicator
+            processingIndicator.style.display = 'block';
+            resultSection.style.display = 'none';
+            hideMessages();
 
             try {
-                const response = await fetch('/api/digit_recognize', {
+                console.log('Sending request to /ocr');
+
+                // Debug FormData contents
+                console.log('FormData contents:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(`${key}:`, value);
+                }
+
+                const response = await fetch('/ocr', {
                     method: 'POST',
                     body: formData
                 });
 
-                const data = await response.json();
+                console.log('Response status:', response.status);
+                const result = await response.json();
+                console.log('Response data:', result);
 
-                if (data.success) {
-                    if (data.predictions && data.predictions.length > 0) {
-                        // Display digits joined by space
-                        const digits = data.predictions.map(p => p.digit).join(' ');
-                        digitDisplay.textContent = digits;
-
-                        // Display probabilities
-                        const probs = data.predictions.map((p, i) => {
-                            const conf = (p.probability * 100).toFixed(1);
-                            const colorClass = conf > 80 ? 'text-success' : (conf > 50 ? 'text-warning' : 'text-danger');
-                            return `<div class="d-flex justify-content-between mb-1 border-bottom pb-1">
-                                <span>Position ${i+1} (Digit <strong>${p.digit}</strong>)</span>
-                                <span class="${colorClass} fw-bold">${conf}%</span>
-                            </div>`;
-                        }).join('');
-                        probDisplay.innerHTML = `<h6 class="mb-3 border-bottom pb-2">Confidence Scores</h6>${probs}`;
-                    } else {
-                        digitDisplay.textContent = "?";
-                        probDisplay.textContent = "No confident digits detected. Please try a clearer image.";
-                    }
-
-                    // Display uploaded image
-                    const img = document.createElement('img');
-                    img.src = URL.createObjectURL(fileInput.files[0]);
-                    img.className = 'preview-img';
-                    imgContainer.appendChild(img);
-
-                    resultDiv.style.display = 'block';
-                    // Scroll to result
-                    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
+                if (result.success) {
+                    showResults(result);
                 } else {
-                    errorDiv.textContent = data.error || 'Unknown error occurred.';
-                    errorDiv.style.display = 'block';
+                    showError(result.error || 'Failed to process image');
                 }
-            } catch (err) {
-                errorDiv.textContent = 'An error occurred while communicating with the server.';
-                errorDiv.style.display = 'block';
-                console.error(err);
+            } catch (error) {
+                console.error('Error during form submission:', error);
+                showError('Network error: ' + error.message);
             } finally {
-                submitBtn.innerHTML = originalBtnText;
-                submitBtn.disabled = false;
+                processingIndicator.style.display = 'none';
             }
         });
+
+        function showResults(result) {
+            const finalResults = result.final_results;
+
+            // Update statistics
+            document.getElementById('wordCount').textContent = finalResults.word_count;
+            document.getElementById('lineCount').textContent = finalResults.line_count;
+            document.getElementById('charCount').textContent = finalResults.character_count;
+            document.getElementById('paraCount').textContent = finalResults.paragraphs ? finalResults.paragraphs.length : 0;
+
+            // Update confidence badge
+            const confidence = Math.round(finalResults.adjusted_confidence);
+            const confidenceBadge = document.getElementById('confidenceBadge');
+            confidenceBadge.textContent = `${confidence}% Confidence`;
+
+            if (confidence >= 90) {
+                confidenceBadge.style.background = 'linear-gradient(135deg, var(--success-color), #2d8a47)';
+            } else if (confidence >= 70) {
+                confidenceBadge.style.background = 'linear-gradient(135deg, var(--warning-color), #d97706)';
+            } else {
+                confidenceBadge.style.background = 'linear-gradient(135deg, var(--danger-color), #dc2626)';
+            }
+
+            // Update extracted text
+            document.getElementById('extractedText').textContent = finalResults.extracted_text;
+
+            // Show results
+            resultSection.style.display = 'block';
+            showSuccess('Text extracted successfully!');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+        }
+
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        function copyText() {
+            const text = document.getElementById('extractedText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showSuccess('Text copied to clipboard!');
+            }).catch(() => {
+                showError('Failed to copy text');
+            });
+        }
+
+        function downloadText() {
+            const text = document.getElementById('extractedText').textContent;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'extracted_text.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showSuccess('Text downloaded successfully!');
+        }
+
+        function clearResults() {
+            resultSection.style.display = 'none';
+            form.reset();
+            // Restore the original upload area content
+            const uploadContent = uploadArea.querySelector('.upload-content');
+            uploadContent.innerHTML = `
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <h3 class="upload-title">Upload Image or Take Photo</h3>
+                <p class="upload-subtitle">Drag and drop your image here, or click to browse</p>
+                <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;">
+                <div id="filePreview" class="mt-2"></div>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('imageInput').click()">
+                    <i class="fas fa-folder-open"></i> Choose File
+                </button>
+            `;
+            filePreview.innerHTML = '';
+            hideMessages();
+        }
+
+        function openCamera() {
+            // This would integrate with device camera
+            alert('Camera functionality would be implemented here for mobile devices');
+        }
+
+        function testFileInput() {
+            console.log('Testing file input functionality...');
+            console.log('File input element:', imageInput);
+            console.log('File input files:', imageInput.files);
+            console.log('File input value:', imageInput.value);
+
+            if (imageInput.files.length > 0) {
+                console.log('File input is not empty. Files:', imageInput.files);
+                const file = imageInput.files[0];
+                console.log('Selected file:', file);
+                console.log('File name:', file.name);
+                console.log('File type:', file.type);
+                console.log('File size:', file.size);
+                alert('File input is not empty. You can proceed with file upload.');
+            } else {
+                console.log('File input is empty. No file selected.');
+                alert('File input is empty. Please select a file to upload.');
+            }
+        }
     </script>
 </body>
 </html>
