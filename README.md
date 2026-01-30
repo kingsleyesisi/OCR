@@ -1,10 +1,10 @@
 # Handwritten Digit Recognition System
 
-A lightweight, modern web application for recognizing handwritten digits (0-9) using a Convolutional Neural Network (CNN).
+A lightweight, modern web application for recognizing handwritten digits (0-9) using a Convolutional Neural Network (CNN). This application supports detecting multiple digits in a single image.
 
 ## Overview
 
-This project uses TensorFlow/Keras to train a model on the MNIST dataset. The web interface allows users to upload images of handwritten digits, which are then processed and classified by the model in real-time.
+This project uses **TensorFlow/Keras** to train a model on the MNIST dataset and **OpenCV** to segment multiple digits from uploaded images. The web interface allows users to upload images of handwritten digits, which are then processed and classified by the model in real-time.
 
 ## Prerequisites
 
@@ -88,6 +88,8 @@ docker run -p 5000:5000 -v $(pwd)/models:/app/models digit-recognizer
 
 Open `http://localhost:5000` in your browser.
 
+**Note:** The Dockerfile is optimized based on `python:3.11-slim` but includes necessary system libraries (`libgl1-mesa-glx`, `libglib2.0-0`, etc.) required by OpenCV.
+
 ---
 
 ## 🛠 Project Structure
@@ -95,7 +97,7 @@ Open `http://localhost:5000` in your browser.
 - **`handwriting/`**: Core application logic.
   - `model.py`: Neural network architecture.
   - `train_mnist.py`: Training script.
-  - `predict.py`: Image preprocessing and inference.
+  - `predict.py`: Image preprocessing, segmentation (using OpenCV), and inference.
   - `api.py`: Flask blueprint for API routes.
 - **`templates/`**: HTML frontend.
 - **`models/`**: Stores the trained `.h5` model files.
@@ -107,7 +109,7 @@ Open `http://localhost:5000` in your browser.
 
 The application exposes a REST API for programmatic access.
 
-### Predict Digit
+### Predict Digits
 **Endpoint:** `POST /api/digit_recognize`
 
 **Parameters:**
@@ -115,14 +117,22 @@ The application exposes a REST API for programmatic access.
 
 **Example Request:**
 ```bash
-curl -X POST -F "file=@digit.png" http://localhost:5000/api/digit_recognize
+curl -X POST -F "file=@digits.png" http://localhost:5000/api/digit_recognize
 ```
 
 **Response:**
 ```json
 {
   "success": true,
-  "digit": 3,
-  "probability": 0.985
+  "predictions": [
+    {
+      "digit": 1,
+      "probability": 0.992
+    },
+    {
+      "digit": 2,
+      "probability": 0.985
+    }
+  ]
 }
 ```
