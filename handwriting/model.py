@@ -1,9 +1,11 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
 
+
 def build_digit_cnn(input_shape=(28, 28, 1), num_classes=10):
     """
-    Builds a simple CNN for digit recognition.
+    Builds a deeper CNN for handwritten digit recognition with
+    BatchNormalization and Dropout for improved accuracy.
 
     Args:
         input_shape (tuple): Shape of the input image (height, width, channels).
@@ -13,12 +15,38 @@ def build_digit_cnn(input_shape=(28, 28, 1), num_classes=10):
         model: Compiled Keras model.
     """
     model = models.Sequential([
-        layers.Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
+        # Block 1
+        layers.Conv2D(32, (3, 3), padding='same', input_shape=input_shape),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Conv2D(32, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
         layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.Dropout(0.25),
+
+        # Block 2
+        layers.Conv2D(64, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Conv2D(64, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
         layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+
+        # Block 3
+        layers.Conv2D(128, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Dropout(0.25),
+
+        # Classifier
         layers.Flatten(),
-        layers.Dense(64, activation='relu'),
+        layers.Dense(256),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Dropout(0.5),
         layers.Dense(num_classes, activation='softmax')
     ])
 

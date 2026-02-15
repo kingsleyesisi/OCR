@@ -1,101 +1,482 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Handwritten Digit Recognition</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="description"
+        content="AI-powered handwritten digit recognition. Upload an image with one or more handwritten digits (0-9) and get instant predictions.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #1e1e35;
+            --accent-primary: #6c63ff;
+            --accent-secondary: #ff6584;
+            --accent-gradient: linear-gradient(135deg, #ffffff 0%, #030006 50%, #000000 100%);
+            --text-primary: #f0f0f5;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border-color: rgba(108, 99, 255, 0.2);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --shadow-glow: 0 0 30px rgba(108, 99, 255, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: #f8f9fa;
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
         }
-        .main-card {
-            max-width: 600px;
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(108, 99, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(255, 101, 132, 0.05) 0%, transparent 50%);
+            animation: bgPulse 8s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes bgPulse {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                transform: translate(-5%, -3%) scale(1.1);
+            }
+        }
+
+        .container {
+            max-width: 680px;
             width: 100%;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            background: white;
-            padding: 2rem;
         }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        /* Main card */
+        .main-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-glow);
+            backdrop-filter: blur(10px);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .main-card:hover {
+            box-shadow: 0 0 50px rgba(108, 99, 255, 0.2);
+        }
+
+        /* Drag area */
+        .drag-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drag-area::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+
+        .drag-area:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .drag-area:hover::before {
+            opacity: 0.05;
+        }
+
+        .drag-area.active {
+            border-color: var(--accent-primary);
+            border-style: solid;
+        }
+
+        .drag-area.active::before {
+            opacity: 0.08;
+        }
+
+        .drag-area>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 1rem;
+            background: var(--accent-gradient);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        .drag-area:hover .upload-icon {
+            transform: translateY(-4px);
+        }
+
+        .upload-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+
+        .drag-area h5 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .drag-area .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Submit button */
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0);
+            transition: background 0.3s ease;
+        }
+
+        .submit-btn:hover:not(:disabled)::before {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .submit-btn:not(:disabled):active {
+            transform: scale(0.98);
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Error */
+        .error-msg {
+            text-align: center;
+            color: var(--error-color);
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        /* Result area */
         .result-box {
             display: none;
             margin-top: 2rem;
-            padding: 1.5rem;
-            border-radius: 10px;
-            background-color: #e9ecef;
-            text-align: center;
+            animation: fadeInUp 0.5s ease;
         }
-        .digit-display {
-            font-size: 4rem;
-            font-weight: bold;
-            color: #0d6efd;
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-header .label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .result-header .summary {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.15em;
+        }
+
+        /* Digit cards grid */
+        .digits-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .digit-card {
+            background: rgba(108, 99, 255, 0.08);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            text-align: center;
+            min-width: 90px;
+            transition: all 0.3s ease;
+            animation: popIn 0.4s ease backwards;
+        }
+
+        .digit-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(108, 99, 255, 0.2);
+            border-color: var(--accent-primary);
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .digit-card .digit-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
             line-height: 1;
         }
-        .prob-display {
-            color: #6c757d;
-            font-size: 1.1rem;
+
+        .digit-card .digit-confidence {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
         }
-        .preview-img {
-            max-width: 150px;
-            max-height: 150px;
-            margin-top: 1rem;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
+
+        .digit-card .confidence-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
         }
-        .drag-area {
-            border: 2px dashed #adb5bd;
-            border-radius: 10px;
-            padding: 2rem;
+
+        .digit-card .confidence-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: var(--accent-gradient);
+            transition: width 1s ease;
+        }
+
+        /* No digit message */
+        .no-digit-msg {
             text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
+            padding: 2rem;
+            color: var(--warning-color);
+            font-size: 1.1rem;
+            font-weight: 500;
         }
-        .drag-area:hover {
-            border-color: #0d6efd;
-            background-color: #f1f8ff;
+
+        .no-digit-msg .icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
         }
-        .error-msg {
-            color: #dc3545;
-            margin-top: 1rem;
-            display: none;
+
+        /* Preview image */
+        .preview-section {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .preview-section .label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .preview-img {
+            max-width: 200px;
+            max-height: 200px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .main-card {
+                padding: 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .drag-area {
+                padding: 2rem 1rem;
+            }
+
+            .result-header .summary {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <div class="main-card mx-auto">
-            <h1 class="text-center mb-4">Digit Recognizer</h1>
-            <p class="text-center text-muted mb-4">Upload an image of a handwritten digit (0-9).</p>
+        <div class="header">
+            <h1>Digit Recognizer</h1>
+            <p>Upload an image with handwritten digits (0-9)</p>
+        </div>
 
+        <div class="main-card">
             <form id="uploadForm">
                 <div class="drag-area" id="dragArea">
-                    <div class="mb-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-cloud-upload text-secondary" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.633 14.533 11 12.5 11h-11C.667 11 0 9.633 0 7.773 0 6.137 1.242 4.804 2.834 4.579a5.53 5.53 0 0 1 1.572-3.237zm0 1a4.53 4.53 0 0 0-3.898 2.245 1.517 1.517 0 0 0-.693 2.163c.192.35.536.602.946.742l.526.177.306.91a2.89 2.89 0 0 1-.36 1.838l-.133.245A1.37 1.37 0 0 0 1.5 10h11a1.37 1.37 0 0 0 1.298-1.573l-.133-.246a2.89 2.89 0 0 1-.36-1.838l.306-.91.526-.177c.41-.14.754-.392.946-.742a1.517 1.517 0 0 0-.693-2.163 4.53 4.53 0 0 0-3.898-2.245z"/>
-                            <path fill-rule="evenodd" d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                    <div class="upload-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path
+                                d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
                         </svg>
                     </div>
                     <h5>Click or Drag & Drop to Upload</h5>
-                    <input type="file" id="fileInput" name="file" accept="image/*" class="d-none" required>
+                    <div class="subtitle">Supports PNG, JPG, JPEG, BMP</div>
+                    <input type="file" id="fileInput" name="file" accept="image/*" class="file-input" required>
                 </div>
 
-                <div class="d-grid gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>Recognize Digit</button>
-                </div>
+                <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                    Recognize Digits
+                </button>
             </form>
 
-            <p id="error" class="error-msg text-center"></p>
+            <p id="error" class="error-msg"></p>
 
             <div id="result" class="result-box">
-                <h5 class="text-uppercase text-secondary fs-6 mb-3">Prediction</h5>
-                <div class="digit-display" id="digit">-</div>
-                <div class="prob-display mt-2">Confidence: <span id="probability">-</span></div>
-                <div id="imageContainer"></div>
+                <div class="result-header">
+                    <div class="label">Detected Digits</div>
+                    <div class="summary" id="summary"></div>
+                </div>
+                <div class="digits-grid" id="digitsGrid"></div>
+                <div class="no-digit-msg" id="noDigitMsg" style="display:none;">
+                    <div class="icon">🔍</div>
+                    <div id="noDigitText"></div>
+                </div>
+                <div class="preview-section" id="previewSection">
+                    <div class="label">Uploaded Image</div>
+                    <div id="imageContainer"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -107,29 +488,28 @@
         const uploadForm = document.getElementById('uploadForm');
         const resultDiv = document.getElementById('result');
         const errorP = document.getElementById('error');
-        const digitDisplay = document.getElementById('digit');
-        const probDisplay = document.getElementById('probability');
+        const summaryDisplay = document.getElementById('summary');
+        const digitsGrid = document.getElementById('digitsGrid');
+        const noDigitMsg = document.getElementById('noDigitMsg');
+        const noDigitText = document.getElementById('noDigitText');
         const imgContainer = document.getElementById('imageContainer');
+        const previewSection = document.getElementById('previewSection');
 
         // Drag & Drop events
         dragArea.addEventListener('click', () => fileInput.click());
 
         dragArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dragArea.style.backgroundColor = '#f1f8ff';
-            dragArea.style.borderColor = '#0d6efd';
+            dragArea.classList.add('active');
         });
 
         dragArea.addEventListener('dragleave', () => {
-            dragArea.style.backgroundColor = '';
-            dragArea.style.borderColor = '#adb5bd';
+            dragArea.classList.remove('active');
         });
 
         dragArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            dragArea.style.backgroundColor = '';
-            dragArea.style.borderColor = '#adb5bd';
-
+            dragArea.classList.remove('active');
             if (e.dataTransfer.files.length > 0) {
                 fileInput.files = e.dataTransfer.files;
                 handleFileSelection();
@@ -142,9 +522,11 @@
             if (fileInput.files.length > 0) {
                 submitBtn.disabled = false;
                 dragArea.querySelector('h5').textContent = fileInput.files[0].name;
+                dragArea.classList.add('active');
             } else {
                 submitBtn.disabled = true;
                 dragArea.querySelector('h5').textContent = 'Click or Drag & Drop to Upload';
+                dragArea.classList.remove('active');
             }
         }
 
@@ -155,8 +537,10 @@
             // UI Reset
             resultDiv.style.display = 'none';
             errorP.style.display = 'none';
+            digitsGrid.innerHTML = '';
             imgContainer.innerHTML = '';
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+            noDigitMsg.style.display = 'none';
+            submitBtn.innerHTML = '<span class="spinner"></span>Processing...';
             submitBtn.disabled = true;
 
             const formData = new FormData();
@@ -171,16 +555,49 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    digitDisplay.textContent = data.digit;
-                    probDisplay.textContent = (data.probability * 100).toFixed(1) + '%';
+                    resultDiv.style.display = 'block';
 
-                    // Display uploaded image
+                    if (data.digits && data.digits.length > 0) {
+                        // Show summary
+                        summaryDisplay.textContent = data.summary;
+                        summaryDisplay.style.display = 'block';
+                        noDigitMsg.style.display = 'none';
+
+                        // Create digit cards
+                        data.digits.forEach((d, i) => {
+                            const card = document.createElement('div');
+                            card.className = 'digit-card';
+                            card.style.animationDelay = `${i * 0.1}s`;
+
+                            const pct = (d.probability * 100).toFixed(1);
+                            card.innerHTML = `
+                                <div class="digit-value">${d.digit}</div>
+                                <div class="digit-confidence">${pct}%</div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: 0%"></div>
+                                </div>
+                            `;
+                            digitsGrid.appendChild(card);
+
+                            // Animate confidence bar
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    card.querySelector('.confidence-fill').style.width = pct + '%';
+                                });
+                            });
+                        });
+                    } else {
+                        // No digits found
+                        summaryDisplay.style.display = 'none';
+                        noDigitMsg.style.display = 'block';
+                        noDigitText.textContent = data.message || "Can't identify any digit in this image";
+                    }
+
+                    // Show uploaded image preview
                     const img = document.createElement('img');
                     img.src = URL.createObjectURL(fileInput.files[0]);
                     img.className = 'preview-img';
                     imgContainer.appendChild(img);
-
-                    resultDiv.style.display = 'block';
                 } else {
                     errorP.textContent = data.error || 'Unknown error occurred.';
                     errorP.style.display = 'block';
@@ -190,10 +607,11 @@
                 errorP.style.display = 'block';
                 console.error(err);
             } finally {
-                submitBtn.textContent = 'Recognize Digit';
+                submitBtn.textContent = 'Recognize Digits';
                 submitBtn.disabled = false;
             }
         });
     </script>
 </body>
+
 </html>

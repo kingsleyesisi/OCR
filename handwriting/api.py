@@ -5,6 +5,7 @@ from .predict import predict_from_pil_image
 
 bp = Blueprint('handwriting', __name__)
 
+
 @bp.route('/api/digit_recognize', methods=['POST'])
 def digit_recognize_api():
     if 'file' not in request.files:
@@ -18,17 +19,22 @@ def digit_recognize_api():
         # Read image
         img = Image.open(file.stream)
 
-        # Predict
+        # Predict all digits
         result = predict_from_pil_image(img)
 
         if 'error' in result:
-             return jsonify({'success': False, 'error': result['error']})
+            return jsonify({'success': False, 'error': result['error']})
 
-        return jsonify({
-            'success': True,
-            'digit': result['digit'],
-            'probability': result['probability']
-        })
+        response = {'success': True}
+
+        if result.get('digits'):
+            response['digits'] = result['digits']
+            response['summary'] = result['summary']
+        else:
+            response['digits'] = []
+            response['message'] = result.get('message', "Can't identify any digit in this image")
+
+        return jsonify(response)
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
