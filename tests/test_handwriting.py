@@ -7,10 +7,15 @@ from handwriting.predict import predict_from_pil_image
 class TestHandwriting(unittest.TestCase):
 
     @patch('handwriting.predict.load_digit_model')
-    def test_predict_from_pil_image(self, mock_load_model):
+    @patch('handwriting.predict.find_digits_contours')
+    def test_predict_from_pil_image(self, mock_find_digits, mock_load_model):
         # Mock the model
         mock_model = MagicMock()
         mock_load_model.return_value = mock_model
+
+        # Mock find_digits_contours to return one box and the thresholded image
+        # Box: x, y, w, h
+        mock_find_digits.return_value = ([(5, 5, 18, 18)], np.zeros((28, 28), dtype=np.uint8))
 
         # Mock prediction result: digit 7 with 0.95 probability
         # The model output should be shape (1, 10)
@@ -22,9 +27,13 @@ class TestHandwriting(unittest.TestCase):
         img = Image.new('L', (28, 28), 0)
 
         # Call predict
-        result = predict_from_pil_image(img)
+        results = predict_from_pil_image(img)
 
-        # Assertions
+        # Assertions: results is a list
+        self.assertIsInstance(results, list)
+        self.assertEqual(len(results), 1)
+
+        result = results[0]
         self.assertEqual(result['digit'], 7)
         self.assertAlmostEqual(result['probability'], 0.95)
         self.assertTrue('error' not in result)

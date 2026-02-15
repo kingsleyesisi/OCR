@@ -4,3 +4,4 @@ __pycache__/
 .venv11
 .log
 ocr_system.log
+app.log
