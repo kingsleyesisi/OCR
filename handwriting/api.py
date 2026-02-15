@@ -19,15 +19,16 @@ def digit_recognize_api():
         img = Image.open(file.stream)
 
         # Predict
-        result = predict_from_pil_image(img)
+        results = predict_from_pil_image(img)
 
-        if 'error' in result:
-             return jsonify({'success': False, 'error': result['error']})
+        # Check if error returned
+        if isinstance(results, dict) and 'error' in results:
+             return jsonify({'success': False, 'error': results['error']})
 
+        # Return list of predictions
         return jsonify({
             'success': True,
-            'digit': result['digit'],
-            'probability': result['probability']
+            'predictions': results
         })
 
     except Exception as e:

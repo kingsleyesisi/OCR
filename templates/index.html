@@ -40,6 +40,11 @@
             color: #6c757d;
             font-size: 1.1rem;
         }
+        .digit-item {
+            display: inline-block;
+            margin: 0 1rem;
+            text-align: center;
+        }
         .preview-img {
             max-width: 150px;
             max-height: 150px;
@@ -93,8 +98,7 @@
 
             <div id="result" class="result-box">
                 <h5 class="text-uppercase text-secondary fs-6 mb-3">Prediction</h5>
-                <div class="digit-display" id="digit">-</div>
-                <div class="prob-display mt-2">Confidence: <span id="probability">-</span></div>
+                <div id="predictions-list" class="d-flex justify-content-center flex-wrap"></div>
                 <div id="imageContainer"></div>
             </div>
         </div>
@@ -107,8 +111,7 @@
         const uploadForm = document.getElementById('uploadForm');
         const resultDiv = document.getElementById('result');
         const errorP = document.getElementById('error');
-        const digitDisplay = document.getElementById('digit');
-        const probDisplay = document.getElementById('probability');
+        const predictionsList = document.getElementById('predictions-list');
         const imgContainer = document.getElementById('imageContainer');
 
         // Drag & Drop events
@@ -171,8 +174,23 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    digitDisplay.textContent = data.digit;
-                    probDisplay.textContent = (data.probability * 100).toFixed(1) + '%';
+                    predictionsList.innerHTML = '';
+
+                    data.predictions.forEach(pred => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'digit-item';
+
+                        const digitVal = pred.digit === 'Unrecognized' ? '?' : pred.digit;
+                        const probVal = (pred.probability * 100).toFixed(1) + '%';
+
+                        const colorStyle = pred.digit === 'Unrecognized' ? 'color: #dc3545;' : '';
+
+                        itemDiv.innerHTML = `
+                            <div class="digit-display" style="${colorStyle}">${digitVal}</div>
+                            <div class="prob-display">${probVal}</div>
+                        `;
+                        predictionsList.appendChild(itemDiv);
+                    });
 
                     // Display uploaded image
                     const img = document.createElement('img');
