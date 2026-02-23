@@ -27,12 +27,12 @@ def digit_recognize_api():
 
         response = {'success': True}
 
-        if result.get('digits'):
+        if 'summary' in result:
             response['digits'] = result['digits']
             response['summary'] = result['summary']
         else:
-            response['digits'] = []
-            response['message'] = result.get('message', "Can't identify any digit in this image")
+            response['digits'] = result.get('digits', [])
+            response['message'] = result.get('message', "Can't identify any valid digit between 1-100 in this image")
 
         return jsonify(response)
 

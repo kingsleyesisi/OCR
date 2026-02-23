@@ -2,14 +2,14 @@ import tensorflow as tf
 from tensorflow.keras import layers, models
 
 
-def build_digit_cnn(input_shape=(28, 28, 1), num_classes=10):
+def build_digit_cnn(input_shape=(28, 28, 1), num_classes=11):
     """
     Builds a deeper CNN for handwritten digit recognition with
     BatchNormalization and Dropout for improved accuracy.
 
     Args:
         input_shape (tuple): Shape of the input image (height, width, channels).
-        num_classes (int): Number of output classes (digits 0-9).
+        num_classes (int): Number of output classes (digits 0-9 plus 10 for noise).
 
     Returns:
         model: Compiled Keras model.
